@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.deps import get_current_user
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.models import User
-from app.schemas.schemas import TokenOut, UserCreate, UserLogin
+from app.schemas.schemas import MeOut, TokenOut, UserCreate, UserLogin
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -30,3 +31,8 @@ async def login(payload: UserLogin):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     return TokenOut(access_token=create_access_token(str(user.id)))
+
+
+@router.get("/me", response_model=MeOut)
+async def me(user: User = Depends(get_current_user)):
+    return MeOut(id=str(user.id), email=user.email, is_admin=user.is_admin)

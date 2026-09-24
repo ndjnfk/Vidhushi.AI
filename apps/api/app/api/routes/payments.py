@@ -28,7 +28,9 @@ _BOOKING_MODEL = {
     "shop": ShopOrder,
 }
 
-_CONFIRMED_STATUS = {"pooja": "confirmed", "shop": "confirmed", "ritual": "active", "consultation": "active"}
+_CONFIRMED_STATUS = {
+    "pooja": "confirmed", "shop": "confirmed", "ritual": "active", "consultation": "active",
+}
 
 
 @router.get("/gateways", response_model=PaymentSettingsOut)

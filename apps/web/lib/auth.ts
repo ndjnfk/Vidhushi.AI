@@ -15,6 +15,7 @@ export function setToken(token: string) {
   } catch {
     // ignore (private browsing / blocked storage)
   }
+  window.dispatchEvent(new Event("vidushiji:auth"));
 }
 
 export function clearToken() {
@@ -23,6 +24,7 @@ export function clearToken() {
   } catch {
     // ignore
   }
+  window.dispatchEvent(new Event("vidushiji:auth"));
 }
 
 export function isLoggedIn(): boolean {

@@ -29,9 +29,10 @@ interface Props {
   order: OrderCreateOut;
   onSuccess: () => void;
   onError?: (message: string) => void;
+  className?: string;
 }
 
-export default function PaymentButton({ order, onSuccess, onError }: Props) {
+export default function PaymentButton({ order, onSuccess, onError, className }: Props) {
   const [busy, setBusy] = useState(false);
 
   async function handlePay() {
@@ -107,7 +108,7 @@ export default function PaymentButton({ order, onSuccess, onError }: Props) {
     <button
       onClick={handlePay}
       disabled={busy}
-      className="bg-orange-600 text-white rounded px-5 py-2.5 disabled:opacity-50"
+      className={className ?? "bg-orange-600 text-white rounded px-5 py-2.5 disabled:opacity-50"}
     >
       {busy ? "Processing..." : `Pay ₹${order.amount.toFixed(2)}`}
     </button>

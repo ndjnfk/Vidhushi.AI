@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 
+from app.core.config import get_settings
 from app.core.deps import get_current_user
-from app.models.models import Product, ShopOrder, ShopOrderItem, ShippingAddress, User
-from app.payments.base import PaymentGatewayError
-from app.payments.booking import create_order_for_booking
-from app.schemas.schemas import CheckoutIn, ProductOut, ShopOrderItemOut, ShopOrderOut
+from app.core.email import send_email
+from app.core.notify import notify_admins
+from app.core.orders import address_text, items_text, new_order_number, order_out, release_stock, reserve_stock, set_status
+from app.models.models import OrderStatusEvent, Product, ProductImage, ShopOrder, ShopOrderItem, ShippingAddress, User
+from app.schemas.schemas import CheckoutIn, ProductOut, ShopOrderOut
 
 router = APIRouter(prefix="/shop", tags=["shop"])
 
@@ -12,17 +14,7 @@ router = APIRouter(prefix="/shop", tags=["shop"])
 def _product_out(p: Product) -> ProductOut:
     return ProductOut(
         id=str(p.id), name=p.name, description=p.description, price=p.price,
-        image_url=p.image_url, category=p.category, stock_quantity=p.stock_quantity,
-    )
-
-
-def _shop_order_out(o: ShopOrder, order_out=None) -> ShopOrderOut:
-    return ShopOrderOut(
-        id=str(o.id),
-        items=[ShopOrderItemOut(**item.model_dump()) for item in o.items],
-        total_amount=o.total_amount,
-        status=o.status,
-        order=order_out,
+        compare_at_price=p.compare_at_price, image_url=p.image_url, category=p.category, stock_quantity=p.stock_quantity,
     )
 
 
@@ -43,53 +35,106 @@ async def get_product(product_id: str):
     return _product_out(product)
 
 
+@router.get("/products/{product_id}/image")
+async def product_image(product_id: str):
+    img = await ProductImage.find_one(ProductImage.product_id == product_id)
+    if img is None:
+        raise HTTPException(status_code=404, detail="No image")
+    # URLs carry ?v=<timestamp>, so a new upload gets a new URL: cache hard.
+    return Response(content=img.data, media_type=img.content_type,
+                    headers={"Cache-Control": "public, max-age=31536000, immutable"})
+
+
 @router.post("/checkout", response_model=ShopOrderOut)
 async def checkout(payload: CheckoutIn, user: User = Depends(get_current_user)):
+    """Place a Cash on Delivery order. Stock is reserved immediately."""
     if not payload.items:
         raise HTTPException(status_code=400, detail="Cart is empty")
 
-    order_items: list[ShopOrderItem] = []
-    total = 0.0
-    for cart_item in payload.items:
-        product = await Product.get(cart_item.product_id)
+    # Merge duplicate lines, then validate everything before touching stock.
+    wanted: dict[str, int] = {}
+    for line in payload.items:
+        wanted[line.product_id] = wanted.get(line.product_id, 0) + line.quantity
+    products = []
+    for pid, qty in wanted.items():
+        try:
+            product = await Product.get(pid)
+        except Exception:
+            product = None
         if product is None or not product.is_active:
-            raise HTTPException(status_code=404, detail=f"Product {cart_item.product_id} not found")
-        if product.stock_quantity < cart_item.quantity:
+            raise HTTPException(status_code=404, detail="A product in your cart is no longer available")
+        if product.stock_quantity < qty:
             raise HTTPException(status_code=400, detail=f"'{product.name}' has only {product.stock_quantity} in stock")
-        order_items.append(ShopOrderItem(
-            product_id=str(product.id), product_name=product.name,
-            quantity=cart_item.quantity, unit_price=product.price,
-        ))
-        total += product.price * cart_item.quantity
+        products.append((product, qty))
 
-    shop_order = ShopOrder(
+    reserved = []
+    for product, qty in products:
+        if not await reserve_stock(product.id, qty):
+            for p_, q_ in reserved:  # someone else bought it meanwhile: undo
+                await Product.get_motor_collection().update_one({"_id": p_.id}, {"$inc": {"stock_quantity": q_}})
+            raise HTTPException(status_code=409, detail=f"'{product.name}' just went out of stock")
+        reserved.append((product, qty))
+
+    order = ShopOrder(
         user_id=str(user.id),
-        items=order_items,
+        items=[ShopOrderItem(product_id=str(p_.id), product_name=p_.name, quantity=q_, unit_price=p_.price)
+               for p_, q_ in products],
         shipping_address=ShippingAddress(**payload.shipping_address.model_dump()),
-        total_amount=round(total, 2),
+        total_amount=round(sum(p_.price * q_ for p_, q_ in products), 2),
+        status="placed", payment_method="cod", order_number=new_order_number(), customer_email=user.email,
+        history=[OrderStatusEvent(status="placed")],
     )
-    await shop_order.insert()
+    await order.insert()
 
+    s = get_settings()
+    await notify_admins(
+        f"New order {order.order_number} — Rs {order.total_amount:,.0f} (Cash on Delivery)",
+        f"A new Cash on Delivery order has been placed.\n\nOrder: {order.order_number}\n"
+        f"Customer: {user.email}\n\nItems:\n{items_text(order)}\n\nTotal to collect: Rs {order.total_amount:,.0f}\n\n"
+        f"Ship to:\n{address_text(order)}\n\nManage it in the admin panel: {s.frontend_url}/admin/orders\n",
+    )
+    await send_email(
+        user.email,
+        f"Order {order.order_number} placed — Cash on Delivery",
+        f"Namaste {order.shipping_address.full_name},\n\nThank you for your order!\n\nOrder: {order.order_number}\n"
+        f"Items:\n{items_text(order)}\n\nAmount to pay on delivery: Rs {order.total_amount:,.0f}\n\n"
+        f"Delivering to:\n{address_text(order)}\n\nTrack your order: {s.frontend_url}/orders/{order.id}\n\n— Vidushi Ji",
+    )
+    return order_out(order)
+
+
+async def _my_order(order_id: str, user: User) -> ShopOrder:
     try:
-        order, order_out = await create_order_for_booking(
-            user_id=str(user.id), item_type="shop", item_ref_id=str(shop_order.id),
-            amount=shop_order.total_amount, notes={"product_info": "Shop order", "email": user.email},
-            gateway_override=payload.gateway,
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except PaymentGatewayError as e:
-        raise HTTPException(status_code=502, detail=str(e))
+        o = await ShopOrder.get(order_id)
+    except Exception:
+        o = None
+    if o is None or o.user_id != str(user.id):
+        raise HTTPException(status_code=404, detail="Order not found")
+    return o
 
-    shop_order.order_id = str(order.id)
-    await shop_order.save()
 
-    return _shop_order_out(shop_order, order_out)
+@router.get("/orders", response_model=list[ShopOrderOut])
+async def my_orders(user: User = Depends(get_current_user)):
+    rows = await ShopOrder.find(ShopOrder.user_id == str(user.id)).sort("-created_at").to_list()
+    return [order_out(o) for o in rows]
 
 
 @router.get("/orders/{order_id}", response_model=ShopOrderOut)
 async def get_order(order_id: str, user: User = Depends(get_current_user)):
-    shop_order = await ShopOrder.get(order_id)
-    if shop_order is None or shop_order.user_id != str(user.id):
-        raise HTTPException(status_code=404, detail="Order not found")
-    return _shop_order_out(shop_order)
+    return order_out(await _my_order(order_id, user))
+
+
+@router.post("/orders/{order_id}/cancel", response_model=ShopOrderOut)
+async def cancel_order(order_id: str, user: User = Depends(get_current_user)):
+    """Customers can cancel until the order ships; stock goes back."""
+    o = await _my_order(order_id, user)
+    if o.status not in ("placed", "confirmed"):
+        raise HTTPException(status_code=400, detail="This order can no longer be cancelled")
+    set_status(o, "cancelled", "Cancelled by customer")
+    await o.save()
+    await release_stock(o)
+    await notify_admins(
+        f"Order {o.order_number} cancelled by the customer",
+        f"{o.customer_email} cancelled order {o.order_number} (Rs {o.total_amount:,.0f}). Stock has been restored.\n",
+    )
+    return order_out(o)

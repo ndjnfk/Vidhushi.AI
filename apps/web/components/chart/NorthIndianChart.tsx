@@ -10,12 +10,9 @@ const HOUSE_LABEL_POS: Record<number, [number, number]> = {
   9: [33, 300], 10: [100, 200], 11: [33, 100], 12: [100, 33],
 };
 
-interface Props {
-  chart: ChartOut;
-  title?: string;
-}
+const LINE = { stroke: "var(--color-gold)", strokeOpacity: 0.55, strokeWidth: 1.2, fill: "none" };
 
-export default function NorthIndianChart({ chart, title }: Props) {
+export default function NorthIndianChart({ chart }: { chart: ChartOut }) {
   const ascIndex = rashiIndex(chart.ascendant_sign);
 
   const planetsByHouse: Record<number, string[]> = {};
@@ -26,40 +23,39 @@ export default function NorthIndianChart({ chart, title }: Props) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      {title && <h3 className="font-semibold">{title}</h3>}
-      <svg viewBox="0 0 400 400" className="w-full max-w-md border">
-        <rect x={0} y={0} width={400} height={400} fill="white" stroke="black" strokeWidth={2} />
-        <polygon points="0,0 400,0 400,400 0,400" fill="none" stroke="black" strokeWidth={1.5} />
-        <line x1={0} y1={0} x2={400} y2={400} stroke="black" strokeWidth={1.5} />
-        <line x1={400} y1={0} x2={0} y2={400} stroke="black" strokeWidth={1.5} />
-        <polygon points="200,0 400,200 200,400 0,200" fill="none" stroke="black" strokeWidth={1.5} />
+    <svg viewBox="0 0 400 400" className="h-auto w-full font-body" role="img" aria-label="North Indian chart">
+      {/* Ascendant (house 1) diamond */}
+      <polygon points="200,0 300,100 200,200 100,100" fill="var(--color-gold)" fillOpacity={0.1} />
+      <rect x={1} y={1} width={398} height={398} {...LINE} strokeWidth={1.6} />
+      <line x1={0} y1={0} x2={400} y2={400} {...LINE} />
+      <line x1={400} y1={0} x2={0} y2={400} {...LINE} />
+      <polygon points="200,0 400,200 200,400 0,200" {...LINE} />
 
-        {Object.entries(HOUSE_LABEL_POS).map(([houseStr, [x, y]]) => {
-          const house = Number(houseStr);
-          const rashiNum = ((ascIndex + house - 1) % 12) + 1;
-          const planets = planetsByHouse[house] ?? [];
-          return (
-            <g key={house}>
-              <text x={x} y={y - 18} fontSize={11} textAnchor="middle" fill="#888">
-                {rashiNum}
+      {Object.entries(HOUSE_LABEL_POS).map(([houseStr, [x, y]]) => {
+        const house = Number(houseStr);
+        const rashiNum = ((ascIndex + house - 1) % 12) + 1;
+        const planets = planetsByHouse[house] ?? [];
+        return (
+          <g key={house}>
+            <text x={x} y={y - 18} fontSize={11} textAnchor="middle" fill="var(--color-cream)" fillOpacity={0.45}>
+              {rashiNum}
+            </text>
+            {planets.map((label, i) => (
+              <text
+                key={label}
+                x={x}
+                y={y + i * 15}
+                fontSize={14}
+                textAnchor="middle"
+                fill={house === 1 ? "var(--color-gold)" : "var(--color-cream)"}
+                fontWeight={house === 1 ? 700 : 500}
+              >
+                {label}
               </text>
-              {planets.map((label, i) => (
-                <text
-                  key={label}
-                  x={x}
-                  y={y + i * 14}
-                  fontSize={13}
-                  textAnchor="middle"
-                  fontWeight={house === 1 ? "bold" : "normal"}
-                >
-                  {label}
-                </text>
-              ))}
-            </g>
-          );
-        })}
-      </svg>
-    </div>
+            ))}
+          </g>
+        );
+      })}
+    </svg>
   );
 }

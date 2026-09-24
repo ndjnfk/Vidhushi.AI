@@ -11,6 +11,18 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Celestial theme (see design/THEME.md) */
+  --color-ink: #0b0809;
+  --color-ink-soft: #151012;
+  --color-line: #2b2427;
+  --color-gold: #c7a17a;
+  --color-gold-deep: #a8845f;
+  --color-cream: #efe8e1;
+  --font-logo: var(--font-italiana);
+  --font-display: var(--font-marcellus);
+  --font-body: var(--font-mulish);
+  --font-script: var(--font-great-vibes);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,4 +36,93 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Still scrollable (short phones), but without a visible scrollbar. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Slim gold scrollbar for sideways-scrolling rows (admin filter tabs). */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-gold) 55%, transparent) transparent;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-gold) 55%, transparent);
+}
+
+/* Scattered stars over a faint nebula haze. */
+.starfield {
+  background-color: var(--color-ink);
+  background-image:
+    radial-gradient(1.5px 1.5px at 8% 12%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 22% 38%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 35% 8%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 47% 27%, #ffffffb0 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 58% 16%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 71% 33%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 86% 22%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 93% 48%, #ffffffb0 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 12% 57%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 5% 83%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 29% 71%, #ffffffb0 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 78% 64%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 91% 88%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 63% 92%, #ffffffb0 50%, transparent 51%),
+    radial-gradient(1px 1px at 16% 30%, #ffffff80 50%, transparent 51%),
+    radial-gradient(1px 1px at 52% 4%, #ffffff80 50%, transparent 51%),
+    radial-gradient(1px 1px at 40% 48%, #ffffff80 50%, transparent 51%),
+    radial-gradient(1px 1px at 97% 6%, #ffffff80 50%, transparent 51%),
+    radial-gradient(ellipse 60% 40% at 20% 10%, #ffffff0d, transparent 70%),
+    radial-gradient(ellipse 50% 35% at 80% 70%, #ffffff08, transparent 70%);
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.7); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(6deg); }
+}
+
+@keyframes flicker {
+  0%, 100% { transform: scale(1, 1) skewX(0deg); opacity: 1; }
+  25% { transform: scale(0.94, 1.06) skewX(-3deg); opacity: 0.92; }
+  50% { transform: scale(1.04, 0.95) skewX(2deg); opacity: 1; }
+  75% { transform: scale(0.97, 1.03) skewX(-1deg); opacity: 0.95; }
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-flicker {
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    animation: flicker 1.6s ease-in-out infinite;
+  }
+  .animate-spin-slow { animation: spin-slow 120s linear infinite; }
+  .animate-twinkle { animation: twinkle 3.2s ease-in-out infinite; }
+  .animate-float { animation: float 7s ease-in-out infinite; }
+}
+
+/* Autofilled inputs keep the dark theme instead of the browser's pale blue. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-cream);
+  caret-color: var(--color-cream);
+  box-shadow: 0 0 0 1000px var(--color-ink-soft) inset;
+  transition: background-color 9999s ease-out;
 }

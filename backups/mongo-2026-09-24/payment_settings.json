@@ -1,0 +1,1 @@
+[{"_id": {"$oid": "6ab50151caea6233d5459308"}, "active_gateway": "mock", "credentials": {}, "enabled_payment_methods": ["upi", "card", "netbanking", "wallet"], "updated_at": {"$date": "2026-09-24T10:54:09.680Z"}}]

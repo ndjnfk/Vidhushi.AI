@@ -6,6 +6,7 @@ export interface CartItem {
   productId: string;
   name: string;
   price: number;
+  image?: string | null;
   quantity: number;
 }
 
@@ -17,6 +18,9 @@ interface CartContextValue {
   clear: () => void;
   totalAmount: number;
   itemCount: number;
+  isOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
 }
 
 const STORAGE_KEY = "vidushiji_cart";
@@ -29,10 +33,14 @@ const CartContext = createContext<CartContextValue>({
   clear: () => {},
   totalAmount: 0,
   itemCount: 0,
+  isOpen: false,
+  openCart: () => {},
+  closeCart: () => {},
 });
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -59,6 +67,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } else {
       persist([...items, { ...item, quantity }]);
     }
+    setIsOpen(true);
   }
 
   function updateQuantity(productId: string, quantity: number) {
@@ -81,7 +90,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addItem, updateQuantity, removeItem, clear, totalAmount, itemCount }}>
+    <CartContext.Provider
+      value={{
+        items, addItem, updateQuantity, removeItem, clear, totalAmount, itemCount,
+        isOpen, openCart: () => setIsOpen(true), closeCart: () => setIsOpen(false),
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

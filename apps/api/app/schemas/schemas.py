@@ -385,21 +385,28 @@ class BlogPostOut(BlogPostSummaryOut):
 
 # ---- Shop ----
 
+PRODUCT_CATEGORIES = "^(bracelet|gemstone|rudraksha|yantra|other)$"
+
+
 class ProductCreate(BaseModel):
-    name: str
-    description: str
-    price: float
+    name: str = Field(min_length=1, max_length=120)
+    description: str = Field(default="", max_length=5000)
+    price: float = Field(ge=0)
+    compare_at_price: float | None = Field(default=None, ge=0)
     image_url: str | None = None
-    category: str
-    stock_quantity: int = 0
+    category: str = Field(default="bracelet", pattern=PRODUCT_CATEGORIES)
+    stock_quantity: int = Field(default=0, ge=0)
+    is_active: bool = True
 
 
 class ProductUpdate(BaseModel):
-    name: str | None = None
-    description: str | None = None
-    price: float | None = None
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    description: str | None = Field(default=None, max_length=5000)
+    price: float | None = Field(default=None, ge=0)
+    compare_at_price: float | None = Field(default=None, ge=0)
     image_url: str | None = None
-    stock_quantity: int | None = None
+    category: str | None = Field(default=None, pattern=PRODUCT_CATEGORIES)
+    stock_quantity: int | None = Field(default=None, ge=0)
     is_active: bool | None = None
 
 
@@ -408,9 +415,11 @@ class ProductOut(BaseModel):
     name: str
     description: str
     price: float
+    compare_at_price: float | None = None
     image_url: str | None
     category: str
     stock_quantity: int
+    is_active: bool = True
 
 
 class CartItemIn(BaseModel):
@@ -419,19 +428,18 @@ class CartItemIn(BaseModel):
 
 
 class ShippingAddressIn(BaseModel):
-    full_name: str
-    phone: str
-    line1: str
-    line2: str | None = None
-    city: str
-    state: str
-    pincode: str
+    full_name: str = Field(min_length=1, max_length=120)
+    phone: str = Field(min_length=6, max_length=20)
+    line1: str = Field(min_length=1, max_length=200)
+    line2: str | None = Field(default=None, max_length=200)
+    city: str = Field(min_length=1, max_length=80)
+    state: str = Field(min_length=1, max_length=80)
+    pincode: str = Field(min_length=4, max_length=10)
 
 
 class CheckoutIn(BaseModel):
     items: list[CartItemIn]
     shipping_address: ShippingAddressIn
-    gateway: str | None = None
 
 
 class ShopOrderItemOut(BaseModel):
@@ -441,9 +449,244 @@ class ShopOrderItemOut(BaseModel):
     unit_price: float
 
 
+class OrderStatusEventOut(BaseModel):
+    status: str
+    at: datetime
+    note: str
+
+
 class ShopOrderOut(BaseModel):
     id: str
+    order_number: str
     items: list[ShopOrderItemOut]
     total_amount: float
     status: str
-    order: OrderCreateOut | None = None
+    payment_method: str
+    shipping_address: ShippingAddressIn
+    customer_email: str
+    courier: str
+    tracking_number: str
+    history: list[OrderStatusEventOut]
+    created_at: datetime
+
+
+class ShopOrderStatusIn(BaseModel):
+    status: str = Field(pattern="^(placed|confirmed|shipped|delivered|cancelled)$")
+    courier: str = Field(default="", max_length=80)
+    tracking_number: str = Field(default="", max_length=80)
+    note: str = Field(default="", max_length=500)
+
+
+class MeOut(BaseModel):
+    id: str
+    email: str
+    is_admin: bool
+
+
+class ConsultationRequestIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    email: EmailStr
+    phone: str = Field(min_length=6, max_length=20)
+    place: str = Field(min_length=1, max_length=200)
+    topic: str = Field(pattern="^(love|career|marriage|other)$")
+    message: str = Field(default="", max_length=2000)
+
+
+class ConsultationRequestOut(BaseModel):
+    id: str
+    name: str
+    email: str
+    phone: str
+    place: str
+    topic: str
+    message: str
+    status: str
+    scheduled_at: datetime | None
+    duration_minutes: int | None
+    amount: float | None
+    admin_note: str
+    created_at: datetime
+    payment_reference: str = ""
+
+
+class ConsultationApproveIn(BaseModel):
+    scheduled_at: datetime  # sent by the admin UI as UTC ISO string
+    duration_minutes: int = Field(gt=0, le=240)
+    amount: float = Field(ge=0)
+    note: str = Field(default="", max_length=1000)
+
+
+class ConsultationDecisionIn(BaseModel):
+    note: str = Field(default="", max_length=1000)
+
+
+class CallInfoOut(BaseModel):
+    role: str  # "client" | "host"
+    ice_servers: list[dict]
+    request: ConsultationRequestOut
+
+
+class CallSignalIn(BaseModel):
+    kind: str = Field(pattern="^(join|offer|answer|ice|bye)$")
+    data: dict = Field(default_factory=dict)
+
+
+class CallSignalOut(BaseModel):
+    id: str
+    sender: str
+    kind: str
+    data: dict
+
+
+class ChatMessageIn(BaseModel):
+    text: str = Field(min_length=1, max_length=2000)
+
+
+class ChatMessageOut(BaseModel):
+    id: str
+    sender: str
+    text: str
+    created_at: datetime
+    read_at: datetime | None
+
+
+class ChatThreadOut(BaseModel):
+    can_send: bool
+    messages: list[ChatMessageOut]
+
+
+class ChatConversationOut(BaseModel):
+    request: "ConsultationRequestOut"
+    last_message: ChatMessageOut | None
+    unread: int  # client messages the host hasn't read
+
+
+class UpiPaymentInfoOut(BaseModel):
+    upi_id: str  # may be empty when only a QR image was uploaded
+    payee_name: str
+    amount: float
+    note: str
+    upi_uri: str | None  # when set, the client renders this as a QR (amount pre-filled)
+    qr_image: str | None  # admin-uploaded QR as a data: URL (amount entered by the payer)
+
+
+class PaymentSubmittedIn(BaseModel):
+    reference: str = Field(default="", max_length=64)
+
+
+class UpiSettingsOut(BaseModel):
+    upi_id: str
+    payee_name: str
+    qr_image: str | None  # data: URL
+    updated_at: datetime | None
+
+
+class UpiSettingsIn(BaseModel):
+    upi_id: str = Field(default="", max_length=100)
+    payee_name: str = Field(default="Vidushi Ji", min_length=1, max_length=100)
+
+
+class UpiQrIn(BaseModel):
+    data_url: str  # "data:image/png;base64,..."
+
+
+class AdminCountsOut(BaseModel):
+    pending: int
+    payment_submitted: int
+
+
+class ImageUploadIn(BaseModel):
+    data_url: str  # "data:image/jpeg;base64,..."
+
+
+class ContactMessageIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    email: EmailStr
+    phone: str = Field(default="", max_length=20)
+    message: str = Field(min_length=1, max_length=4000)
+    website: str = ""  # honeypot: real visitors never fill this hidden field
+
+
+class ContactMessageOut(BaseModel):
+    id: str
+    name: str
+    email: str
+    phone: str
+    message: str
+    handled: bool
+    created_at: datetime
+
+
+SOCIAL_PLATFORMS = "^(instagram|facebook|youtube|x|whatsapp|linkedin|telegram|website)$"
+
+
+class SocialLinkIn(BaseModel):
+    platform: str = Field(pattern=SOCIAL_PLATFORMS)
+    url: str = Field(min_length=1, max_length=300)
+
+
+class SiteSettingsIn(BaseModel):
+    phone: str = Field(default="", max_length=30)
+    show_phone: bool = True
+    email: str = Field(default="", max_length=120)
+    show_email: bool = True
+    address: str = Field(default="", max_length=300)
+    show_address: bool = True
+    hours: str = Field(default="", max_length=120)
+    show_hours: bool = True
+    whatsapp: str = Field(default="", max_length=20)
+    show_whatsapp: bool = False
+    social_links: list[SocialLinkIn] = Field(default_factory=list, max_length=12)
+
+
+class SiteSettingsOut(SiteSettingsIn):
+    pass
+
+
+class PublicSiteOut(BaseModel):
+    """Only what is switched on; hidden fields come back empty."""
+    phone: str
+    email: str
+    address: str
+    hours: str
+    whatsapp: str
+    social_links: list[SocialLinkIn]
+
+
+class HomeStatIn(BaseModel):
+    label: str = Field(min_length=1, max_length=60)
+    value: int = Field(ge=0, le=100_000_000)
+    suffix: str = Field(default="+", max_length=4)
+
+
+class TestimonialIn(BaseModel):
+    quote: str = Field(min_length=1, max_length=1000)
+    name: str = Field(min_length=1, max_length=80)
+    detail: str = Field(default="", max_length=80)
+    rating: int = Field(default=5, ge=1, le=5)
+    photo_url: str | None = None
+
+
+class ValueCardIn(BaseModel):
+    title: str = Field(min_length=1, max_length=80)
+    body: str = Field(min_length=1, max_length=500)
+
+
+class HomeContentIn(BaseModel):
+    hero_title: str = Field(default="", max_length=200)
+    hero_text: str = Field(default="", max_length=1000)
+    hero_image_url: str | None = None
+    about_title: str = Field(default="", max_length=200)
+    about_text: str = Field(default="", max_length=2000)
+    about_image1_url: str | None = None
+    about_image2_url: str | None = None
+    years_experience: int = Field(default=10, ge=0, le=100)
+    stats: list[HomeStatIn] = Field(default_factory=list, max_length=4)
+    testimonials: list[TestimonialIn] = Field(default_factory=list, max_length=20)
+    story_title: str = Field(default="", max_length=200)
+    story_text: str = Field(default="", max_length=5000)
+    values: list[ValueCardIn] = Field(default_factory=list, max_length=6)
+
+
+class HomeContentOut(HomeContentIn):
+    pass

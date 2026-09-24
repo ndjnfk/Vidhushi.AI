@@ -13,12 +13,9 @@ const CELL_RASHI: [number, number, number][] = [
   [1, 0, 10],
 ];
 
-interface Props {
-  chart: ChartOut;
-  title?: string;
-}
+const CELL = 100;
 
-export default function SouthIndianChart({ chart, title }: Props) {
+export default function SouthIndianChart({ chart }: { chart: ChartOut }) {
   const ascIndex = rashiIndex(chart.ascendant_sign);
 
   const planetsByRashi: Record<number, string[]> = {};
@@ -29,56 +26,54 @@ export default function SouthIndianChart({ chart, title }: Props) {
     (planetsByRashi[idx] ??= []).push(label);
   }
 
-  const cellSize = 100;
-
   return (
-    <div className="flex flex-col items-center gap-2">
-      {title && <h3 className="font-semibold">{title}</h3>}
-      <svg viewBox="0 0 400 400" className="w-full max-w-md border">
-        {CELL_RASHI.map(([row, col, rashi]) => {
-          const x = col * cellSize;
-          const y = row * cellSize;
-          const planets = planetsByRashi[rashi] ?? [];
-          const isAscendant = rashi === ascIndex;
-          return (
-            <g key={rashi}>
-              <rect
-                x={x}
-                y={y}
-                width={cellSize}
-                height={cellSize}
-                fill="white"
-                stroke="black"
-                strokeWidth={1.5}
-              />
-              {isAscendant && (
-                <line
-                  x1={x + 6}
-                  y1={y + cellSize - 6}
-                  x2={x + 18}
-                  y2={y + cellSize - 18}
-                  stroke="red"
-                  strokeWidth={2}
-                />
-              )}
-              <text x={x + 6} y={y + 14} fontSize={10} fill="#888">
-                {rashi + 1}
+    <svg viewBox="0 0 400 400" className="h-auto w-full font-body" role="img" aria-label="South Indian chart">
+      {CELL_RASHI.map(([row, col, rashi]) => {
+        const x = col * CELL;
+        const y = row * CELL;
+        const planets = planetsByRashi[rashi] ?? [];
+        const isAscendant = rashi === ascIndex;
+        return (
+          <g key={rashi}>
+            <rect
+              x={x + 0.6}
+              y={y + 0.6}
+              width={CELL - 1.2}
+              height={CELL - 1.2}
+              fill={isAscendant ? "var(--color-gold)" : "none"}
+              fillOpacity={isAscendant ? 0.1 : 0}
+              stroke="var(--color-gold)"
+              strokeOpacity={0.55}
+              strokeWidth={1.2}
+            />
+            {isAscendant && (
+              <line x1={x + 8} y1={y + CELL - 8} x2={x + 22} y2={y + CELL - 22} stroke="var(--color-gold)" strokeWidth={2} />
+            )}
+            <text x={x + 8} y={y + 16} fontSize={11} fill="var(--color-cream)" fillOpacity={0.45}>
+              {rashi + 1}
+            </text>
+            {planets.map((label, i) => (
+              <text
+                key={label}
+                x={x + CELL / 2}
+                y={y + 44 + i * 16}
+                fontSize={14}
+                textAnchor="middle"
+                fill={isAscendant ? "var(--color-gold)" : "var(--color-cream)"}
+                fontWeight={isAscendant ? 700 : 500}
+              >
+                {label}
               </text>
-              {planets.map((label, i) => (
-                <text
-                  key={label}
-                  x={x + cellSize / 2}
-                  y={y + 40 + i * 16}
-                  fontSize={13}
-                  textAnchor="middle"
-                >
-                  {label}
-                </text>
-              ))}
-            </g>
-          );
-        })}
-      </svg>
-    </div>
+            ))}
+          </g>
+        );
+      })}
+      {/* Empty centre: small ornament */}
+      <path
+        d="M200 170C201.5 187 213 198.5 230 200C213 201.5 201.5 213 200 230C198.5 213 187 201.5 170 200C187 198.5 198.5 187 200 170Z"
+        fill="var(--color-gold)"
+        fillOpacity={0.35}
+      />
+    </svg>
   );
 }

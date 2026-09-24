@@ -1,29 +1,35 @@
+"use client";
+
 import type { PanchangOut } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 function fmtTime(d: string) {
   return new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 }
 
 export default function PanchangCard({ panchang }: { panchang: PanchangOut }) {
+  const { t } = useLanguage();
   const rows: [string, string][] = [
-    ["Vara", panchang.vara],
-    ["Tithi", `${panchang.tithi} (${panchang.tithi_paksha} Paksha)`],
-    ["Nakshatra", panchang.nakshatra],
-    ["Yoga", panchang.yoga],
-    ["Karana", panchang.karana],
-    ["Sunrise", fmtTime(panchang.sunrise_utc)],
-    ["Sunset", fmtTime(panchang.sunset_utc)],
+    ["panchang.vara", panchang.vara],
+    ["panchang.tithi", `${panchang.tithi} (${panchang.tithi_paksha} Paksha)`],
+    ["panchang.nakshatra", panchang.nakshatra],
+    ["panchang.yoga", panchang.yoga],
+    ["panchang.karana", panchang.karana],
+    ["panchang.sunrise", fmtTime(panchang.sunrise_utc)],
+    ["panchang.sunset", fmtTime(panchang.sunset_utc)],
   ];
 
   return (
-    <div className="border rounded p-4 flex flex-col gap-1 max-w-sm">
-      <h3 className="font-semibold mb-2">Panchang</h3>
-      {rows.map(([label, value]) => (
-        <div key={label} className="flex justify-between text-sm">
-          <span className="text-gray-600">{label}</span>
-          <span className="font-medium">{value}</span>
-        </div>
-      ))}
-    </div>
+    <section className="h-fit border border-line bg-ink/85 p-6 backdrop-blur-sm md:p-8">
+      <h2 className="font-display text-2xl uppercase tracking-[0.05em] text-gold">{t("kundli.panchang")}</h2>
+      <dl className="mt-6 divide-y divide-line">
+        {rows.map(([key, value]) => (
+          <div key={key} className="flex items-baseline justify-between gap-6 py-3.5">
+            <dt className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-cream/65">{t(key)}</dt>
+            <dd className="text-right text-cream">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }

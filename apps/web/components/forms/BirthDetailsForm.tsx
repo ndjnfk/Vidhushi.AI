@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Sparkle from "@/components/Sparkle";
 import type { BirthDetailsIn } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
@@ -15,6 +16,19 @@ interface Props {
   onSubmit: (details: BirthDetailsIn) => void;
   busy?: boolean;
 }
+
+// Celestial-theme styles.
+const c = {
+  form: "flex flex-col gap-6",
+  label: "text-[13px] font-extrabold uppercase tracking-[0.14em] text-cream/80",
+  input:
+    "w-full border border-line bg-transparent px-4 py-3.5 text-cream [color-scheme:dark] placeholder:text-cream/45 outline-none transition-colors focus:border-gold",
+  hint: "text-xs text-cream/60",
+  menu: "no-scrollbar absolute top-full left-0 right-0 z-10 mt-1 max-h-56 overflow-auto border border-line bg-ink-soft shadow-2xl",
+  option: "cursor-pointer px-4 py-3 text-sm text-cream/90 transition-colors hover:bg-ink hover:text-gold",
+  submit:
+    "mt-2 flex items-center justify-center gap-3 bg-white px-7 py-5 text-[13px] font-extrabold uppercase tracking-[0.16em] text-ink transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:border disabled:border-line disabled:bg-transparent disabled:text-cream/50",
+};
 
 export default function BirthDetailsForm({ submitLabel, onSubmit, busy }: Props) {
   const { t } = useLanguage();
@@ -68,56 +82,56 @@ export default function BirthDetailsForm({ submitLabel, onSubmit, busy }: Props)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md">
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">{t("kundli.formName")}</span>
+    <form onSubmit={handleSubmit} className={c.form}>
+      <label className="flex flex-col gap-2">
+        <span className={c.label}>{t("kundli.formName")}</span>
         <input
-          className="border rounded px-3 py-2"
+          className={c.input}
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
         />
       </label>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">{t("kundli.formBirthDate")}</span>
+      <label className="flex flex-col gap-2">
+        <span className={c.label}>{t("kundli.formBirthDate")}</span>
         <input
           type="date"
-          className="border rounded px-3 py-2"
+          className={c.input}
           value={birthDate}
           onChange={(e) => setBirthDate(e.target.value)}
           required
         />
       </label>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">{t("kundli.formBirthTime")}</span>
+      <label className="flex flex-col gap-2">
+        <span className={c.label}>{t("kundli.formBirthTime")}</span>
         <input
           type="time"
           step={60}
-          className="border rounded px-3 py-2"
+          className={c.input}
           value={birthTime}
           onChange={(e) => setBirthTime(e.target.value)}
           required
         />
       </label>
 
-      <label className="flex flex-col gap-1 relative">
-        <span className="text-sm font-medium">{t("kundli.formBirthPlace")}</span>
+      <label className="relative flex flex-col gap-2">
+        <span className={c.label}>{t("kundli.formBirthPlace")}</span>
         <input
-          className="border rounded px-3 py-2"
+          className={c.input}
           value={placeQuery}
           onChange={(e) => searchPlace(e.target.value)}
           placeholder={t("kundli.formPlacePlaceholder")}
           required
         />
-        {searching && <span className="text-xs text-gray-500">{t("kundli.searching")}</span>}
+        {searching && <span className={c.hint}>{t("kundli.searching")}</span>}
         {suggestions.length > 0 && (
-          <ul className="absolute top-full left-0 right-0 z-10 bg-white border rounded shadow max-h-48 overflow-auto">
+          <ul className={c.menu}>
             {suggestions.map((s, i) => (
               <li
                 key={i}
-                className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                className={c.option}
                 onClick={() => selectPlace(s)}
               >
                 {s.display_name}
@@ -130,8 +144,9 @@ export default function BirthDetailsForm({ submitLabel, onSubmit, busy }: Props)
       <button
         type="submit"
         disabled={!place || busy}
-        className="bg-orange-600 text-white rounded px-4 py-2 disabled:opacity-50"
+        className={c.submit}
       >
+        <Sparkle className="h-3.5 w-3.5 text-gold-deep" />
         {busy ? t("kundli.calculating") : resolvedSubmitLabel}
       </button>
     </form>

@@ -80,8 +80,29 @@ export interface GunaMilanOut {
   max_points: number;
 }
 
-export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const token = getToken();
+// Keeps the old "API error <status>: <body>" message; adds the status and
+// FastAPI's `detail` for callers that need to branch on them.
+export class ApiError extends Error {
+  constructor(public status: number, public body: string) {
+    super(`API error ${status}: ${body}`);
+  }
+
+  get detail(): string {
+    try {
+      const d = JSON.parse(this.body)?.detail;
+      return typeof d === "string" ? d : this.body;
+    } catch {
+      return this.body;
+    }
+  }
+}
+
+export function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, options, getToken());
+}
+
+// Shared by the site (customer token) and the admin panel (admin token).
+export async function apiRequest<T>(path: string, options: RequestInit | undefined, token: string | null): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
@@ -92,7 +113,7 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
   });
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`API error ${res.status}: ${body}`);
+    throw new ApiError(res.status, body);
   }
   return res.json() as Promise<T>;
 }
@@ -135,4 +156,27 @@ export function login(email: string, password: string): Promise<TokenOut> {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
+}
+
+export interface MeOut {
+  id: string;
+  email: string;
+  is_admin: boolean;
+}
+
+export function getMe(): Promise<MeOut> {
+  return apiFetch<MeOut>("/auth/me");
+}
+
+
+export interface ContactMessageIn {
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  website: string; // honeypot, always empty for real visitors
+}
+
+export function sendContactMessage(body: ContactMessageIn): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>("/contact", { method: "POST", body: JSON.stringify(body) });
 }

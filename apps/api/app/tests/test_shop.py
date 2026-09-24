@@ -1,5 +1,4 @@
 from app.models.models import Product, ShippingAddress, ShopOrder, ShopOrderItem, User
-from app.payments.booking import create_order_for_booking
 
 
 async def _make_user() -> User:
@@ -41,28 +40,6 @@ async def test_checkout_computes_total_from_snapshot_prices():
 
     assert order.total_amount == 2198.0
     assert len(order.items) == 2
-
-
-async def test_order_created_for_shop_checkout_amount():
-    user = await _make_user()
-    product = await _make_product(price=750.0)
-
-    shop_order = ShopOrder(
-        user_id=str(user.id),
-        items=[ShopOrderItem(product_id=str(product.id), product_name=product.name, quantity=3, unit_price=product.price)],
-        shipping_address=_address(),
-        total_amount=2250.0,
-    )
-    await shop_order.insert()
-
-    order, order_out = await create_order_for_booking(
-        user_id=str(user.id), item_type="shop", item_ref_id=str(shop_order.id),
-        amount=shop_order.total_amount, notes={},
-    )
-
-    assert order.amount == 2250.0
-    assert order.item_type == "shop"
-    assert order_out.gateway == "mock"
 
 
 async def test_stock_quantity_never_negative_assumption():
