@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import Planet from "@/components/Planet";
 import Sparkle from "@/components/Sparkle";
 import PhotoGallery from "@/components/booking/PhotoGallery";
+import ReviewForm from "@/components/reviews/ReviewForm";
 import StatusBadge from "@/components/booking/StatusBadge";
 import UpiPayModal from "@/components/booking/UpiPayModal";
 import Starfield from "@/components/Starfield";
@@ -199,6 +200,8 @@ export default function BookingPage() {
                 {b.channels.includes("chat") && <p className="mt-3 text-xs text-cream/55">{t("chat.anytimeNote")}</p>}
               </div>
             )}
+
+            {b.status === "completed" && <ReviewForm target="booking" id={b.id} />}
 
             {b.status === "completed" && b.channels.includes("chat") && (
               <Link href={`/bookings/${b.id}/chat`} className={`${SECONDARY} mt-8`}>

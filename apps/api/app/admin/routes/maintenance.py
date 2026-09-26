@@ -13,6 +13,7 @@ from app.core.live import PRODUCTS, bump
 from app.core.security import verify_password
 from app.models.models import (
     BookingPhoto,
+    Review,
     CallSignal,
     ChatMessage,
     ConsultationBooking,
@@ -36,6 +37,7 @@ TARGETS = [
     (User, {"is_admin": {"$ne": True}}),
     (ConsultationRequest, {}),
     (BookingPhoto, {}),
+    (Review, {}),
     (ChatMessage, {}),
     (CallSignal, {}),
     (ConsultationBooking, {}),

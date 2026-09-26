@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import UpiPayModal from "@/components/booking/UpiPayModal";
+import ReviewForm from "@/components/reviews/ReviewForm";
 import OrderStatusBadge from "@/components/shop/OrderStatusBadge";
 import Sparkle from "@/components/Sparkle";
 import Starfield from "@/components/Starfield";
@@ -228,6 +229,8 @@ export default function OrderPage() {
                 </address>
               </section>
             </div>
+
+            {o.status === "delivered" && <ReviewForm target="order" id={o.id} />}
 
             {(o.status === "pending_payment" || o.status === "placed" || o.status === "confirmed") && (
               <button type="button" onClick={cancel} className="mt-8 text-sm text-cream/55 underline-offset-4 hover:text-gold hover:underline">

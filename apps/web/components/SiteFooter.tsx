@@ -14,7 +14,6 @@ const COLUMNS: { title: string; links: { href: string; key: string }[] }[] = [
       { href: "/?book=1", key: "home.ctaBook" },
       { href: "/kundli", key: "nav.kundli" },
       { href: "/matching", key: "nav.matching" },
-      { href: "/tarot", key: "nav.tarot" },
     ],
   },
   {
@@ -23,6 +22,7 @@ const COLUMNS: { title: string; links: { href: string; key: string }[] }[] = [
       { href: "/", key: "nav.home" },
       { href: "/about", key: "nav.about" },
       { href: "/shop", key: "nav.shop" },
+      { href: "/reviews", key: "nav.reviews" },
       { href: "/contact", key: "nav.contact" },
     ],
   },

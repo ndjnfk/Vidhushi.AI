@@ -85,13 +85,13 @@ export default function Home() {
                 <Sparkle className="h-3.5 w-3.5 text-gold-deep" />
                 {t("tarot.ctaBook")}
               </BookConsultationButton>
-              <a
-                href="#sessions"
+              <BookConsultationButton
+                preset={{ kind: "ritual" }}
                 className="inline-flex items-center gap-3 border border-cream/40 px-9 py-5 text-[13px] font-extrabold uppercase tracking-[0.16em] text-cream transition-colors hover:border-gold hover:text-gold"
               >
                 <Sparkle className="h-3.5 w-3.5 text-gold" />
-                {t("tarot.ctaSessions")}
-              </a>
+                {t("rituals.ctaEnquire")}
+              </BookConsultationButton>
             </div>
           </div>
         </div>

@@ -15,6 +15,7 @@ const NAV = [
   { href: "/admin/chats", label: "Chats", icon: "M4 5h16v11H8l-4 4V5Z" },
   { href: "/admin/orders", label: "Orders", icon: "M5 8h14l-1.2 12H6.2L5 8ZM9 10V6a3 3 0 0 1 6 0v4" },
   { href: "/admin/products", label: "Products", icon: "M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18ZM12 7a5 5 0 1 0 0 10a5 5 0 0 0 0-10Z" },
+  { href: "/admin/reviews", label: "Reviews", icon: "M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" },
   { href: "/admin/messages", label: "Messages", icon: "M3 6h18v12H3zM3 6l9 7 9-7" },
   { href: "/admin/home", label: "Home page", icon: "M3 11l9-8 9 8M5 10v10h14V10" },
   { href: "/admin/tarot", label: "Tarot sessions", icon: "M7 3h10v18H7zM12 8l1.2 2.6 2.8.4-2 2 .5 2.8L12 14.5 9.5 15.8l.5-2.8-2-2 2.8-.4z" },

@@ -576,6 +576,28 @@ class TarotContent(Document):
         name = "tarot_content"
 
 
+class Review(Document):
+    """A customer's rating of a completed consultation/ritual or a delivered
+    shop order. One per booking/order. Shown on the public Reviews page
+    unless the admin hides it."""
+    user_id: str
+    target_kind: str  # "consultation" | "ritual" | "order"
+    target_id: str
+    rating: int  # 1-5
+    text: str
+    name: str  # shown publicly, shortened: "Asha V."
+    label: str  # what was reviewed: session name, "Healing ritual", product
+    hidden: bool = False
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "reviews"
+        indexes = [
+            IndexModel([("target_kind", 1), ("target_id", 1)], unique=True),
+            IndexModel([("hidden", 1), ("created_at", -1)]),
+        ]
+
+
 class BookingPhoto(Document):
     """A photo a client attached to a session or ritual request (e.g. palms).
     Private: served only to that client and to the admin, never by public URL."""

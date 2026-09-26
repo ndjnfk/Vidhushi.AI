@@ -811,3 +811,41 @@ class TarotContentIn(BaseModel):
 
 class TarotContentOut(TarotContentIn):
     pass
+
+
+# ---- Reviews ----
+
+class ReviewIn(BaseModel):
+    target: str = Field(pattern="^(booking|order)$")  # a consultation/ritual booking, or a shop order
+    target_id: str = Field(min_length=1, max_length=40)
+    rating: int = Field(ge=1, le=5)
+    text: str = Field(min_length=3, max_length=1000)
+
+
+class ReviewOut(BaseModel):
+    id: str
+    target_kind: str  # "consultation" | "ritual" | "order"
+    rating: int
+    text: str
+    name: str
+    label: str
+    created_at: datetime
+
+
+class ReviewPageOut(BaseModel):
+    items: list[ReviewOut]
+    total: int
+    average: float | None  # over every visible review
+
+
+class MyReviewOut(ReviewOut):
+    target_id: str
+
+
+class AdminReviewOut(ReviewOut):
+    target_id: str
+    hidden: bool
+
+
+class ReviewHiddenIn(BaseModel):
+    hidden: bool

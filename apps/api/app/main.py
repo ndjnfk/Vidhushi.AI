@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.admin.router import router as admin_router
 from app.api.routes import live
-from app.api.routes import astrologers, auth, blog, bookings, chat, contact, home, site, consultations, kundli, matching, panchang, payments, poojas, rituals, shop, storefront, tarot
+from app.api.routes import astrologers, auth, blog, bookings, chat, contact, home, site, consultations, kundli, matching, panchang, payments, poojas, reviews, rituals, shop, storefront, tarot
 from app.core.config import get_settings
 from app.core import email
 from app.core.db import init_db
@@ -49,6 +49,7 @@ app.include_router(admin_router)
 app.include_router(tarot.router)
 app.include_router(blog.router)
 app.include_router(shop.router)
+app.include_router(reviews.router)
 app.include_router(storefront.router)
 
 

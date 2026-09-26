@@ -4,6 +4,7 @@ import { makeChatApi, type ChatConversationOut } from "@/lib/chat";
 import type { ProductOut, ShopOrderOut } from "@/lib/shop";
 import type { HomeContent } from "@/lib/useHomeContent";
 import type { TarotContent } from "@/lib/useTarotContent";
+import type { ReviewOut } from "@/lib/reviews";
 import type { SocialLink } from "@/lib/useSiteInfo";
 import { adminFetch } from "./session";
 
@@ -120,3 +121,12 @@ export const clearAllData = (password: string, confirm: string) =>
     method: "POST",
     body: JSON.stringify({ password, confirm }),
   });
+
+// Customer reviews (Hide takes one off the public Reviews page).
+export interface AdminReviewOut extends ReviewOut {
+  target_id: string;
+  hidden: boolean;
+}
+export const listAdminReviews = () => adminFetch<AdminReviewOut[]>("/admin/reviews");
+export const setReviewHidden = (id: string, hidden: boolean) =>
+  adminFetch<AdminReviewOut>(`/admin/reviews/${id}`, { method: "PUT", body: JSON.stringify({ hidden }) });
