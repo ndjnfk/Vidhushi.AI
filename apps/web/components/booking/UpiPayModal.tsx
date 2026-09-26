@@ -5,23 +5,32 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Sparkle from "@/components/Sparkle";
 import { ApiError } from "@/lib/api";
-import { getPaymentInfo, submitPayment, type ConsultationRequestOut, type UpiPaymentInfoOut } from "@/lib/bookings";
+import { getPaymentInfo, submitPayment, type UpiPaymentInfoOut } from "@/lib/bookings";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { formatPrice } from "@/lib/shop";
+import { formatPrice, getOrderPaymentInfo, submitOrderPayment } from "@/lib/shop";
+
+// What is being paid for: a consultation/ritual fee, or a shop order's advance.
+const TARGETS = {
+  booking: { info: getPaymentInfo, submit: submitPayment, afterNote: "pay.afterNote" },
+  order: { info: getOrderPaymentInfo, submit: submitOrderPayment, afterNote: "pay.afterNoteOrder" },
+} as const;
 import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
 
-// Pay the consultation fee by UPI: QR code (scan with any UPI app), the UPI
-// ID to copy, an "open UPI app" link for phones, then "I have paid" with an
-// optional transaction reference. Vidushi Ji confirms receipt separately.
+// Pay by UPI: QR code (scan with any UPI app), the UPI ID to copy, an "open
+// UPI app" link for phones, then "I have paid" with an optional transaction
+// reference. Vidushi Ji confirms receipt separately.
 export default function UpiPayModal({
-  bookingId,
+  kind = "booking",
+  id,
   onClose,
   onSubmitted,
 }: {
-  bookingId: string;
+  kind?: keyof typeof TARGETS;
+  id: string;
   onClose: () => void;
-  onSubmitted: (b: ConsultationRequestOut) => void;
+  onSubmitted: () => void;
 }) {
+  const target = TARGETS[kind];
   const { t } = useLanguage();
   const [info, setInfo] = useState<UpiPaymentInfoOut | null>(null);
   const [qr, setQr] = useState<string | null>(null);
@@ -32,7 +41,7 @@ export default function UpiPayModal({
   useLockBodyScroll(true);
 
   useEffect(() => {
-    getPaymentInfo(bookingId)
+    TARGETS[kind].info(id)
       .then(async (i) => {
         setInfo(i);
         setQr(
@@ -44,7 +53,7 @@ export default function UpiPayModal({
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [bookingId, onClose, t]);
+  }, [kind, id, onClose, t]);
 
   async function copy() {
     if (!info) return;
@@ -61,7 +70,8 @@ export default function UpiPayModal({
     e.preventDefault();
     setBusy(true);
     try {
-      onSubmitted(await submitPayment(bookingId, reference));
+      await target.submit(id, reference);
+      onSubmitted();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setBusy(false);
@@ -122,7 +132,7 @@ export default function UpiPayModal({
                     placeholder={t("pay.referencePlaceholder")}
                     className="w-full border border-line bg-transparent px-4 py-3.5 text-cream outline-none placeholder:text-cream/45 focus:border-gold" />
                 </label>
-                <p className="mt-3 text-xs leading-relaxed text-cream/55">{t("pay.afterNote")}</p>
+                <p className="mt-3 text-xs leading-relaxed text-cream/55">{t(target.afterNote)}</p>
               </div>
             )}
           </div>

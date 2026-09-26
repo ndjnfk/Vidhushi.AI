@@ -6,7 +6,7 @@ import type { CallInfoOut, CallSignalOut } from "@/lib/bookings";
 
 // The signaling endpoints for one side of one booking (client or admin API).
 export interface CallApi {
-  getCallInfo: () => Promise<CallInfoOut>;
+  getCallInfo: (mode?: "audio" | "video") => Promise<CallInfoOut>;
   sendSignal: (kind: CallSignalOut["kind"], data?: Record<string, unknown>) => Promise<CallSignalOut>;
   pollSignals: (after: string) => Promise<CallSignalOut[]>;
 }
@@ -30,7 +30,8 @@ export type CallState =
   | "connecting"
   | "connected"
   | "peer-left"
-  | "left";
+  | "left"
+  | "not-included";
 
 const POLL_MS = 1000;
 
@@ -168,11 +169,12 @@ export function useCall(api: CallApi, mode: "audio" | "video") {
     (async () => {
       let callInfo: CallInfoOut;
       try {
-        callInfo = await api.getCallInfo();
+        callInfo = await api.getCallInfo(mode);
       } catch (e) {
         if (!live()) return;
         if (e instanceof ApiError && e.status === 425) setState("too-early");
         else if (e instanceof ApiError && e.status === 410) setState("ended-window");
+        else if (e instanceof ApiError && e.status === 403 && e.detail === "not_included") setState("not-included");
         else {
           setError(e instanceof ApiError ? e.detail : String(e));
           setState("unavailable");

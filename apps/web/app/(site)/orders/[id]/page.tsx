@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import UpiPayModal from "@/components/booking/UpiPayModal";
 import OrderStatusBadge from "@/components/shop/OrderStatusBadge";
 import Sparkle from "@/components/Sparkle";
 import Starfield from "@/components/Starfield";
@@ -25,6 +26,8 @@ export default function OrderPage() {
   const [o, setO] = useState<ShopOrderOut | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [justPlaced, setJustPlaced] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
+  const closePay = useCallback(() => setPayOpen(false), []);
 
   const load = useCallback(() => {
     getShopOrder(params.id).then(setO).catch((e) => setError(e.message));
@@ -35,12 +38,15 @@ export default function OrderPage() {
       window.location.href = `/account/login?next=${encodeURIComponent(`/orders/${params.id}`)}`;
       return;
     }
-    const placed = new URLSearchParams(window.location.search).get("placed") === "1";
-    // Strip ?placed only when actually showing the banner (dev mode runs this twice).
+    const query = new URLSearchParams(window.location.search);
+    const placed = query.get("placed") === "1";
+    const pay = query.get("pay") === "1"; // straight from checkout: open the UPI payment
+    // Strip the params only when actually acting on them (dev mode runs this twice).
     const raf = requestAnimationFrame(() => {
-      if (!placed) return;
+      if (!placed && !pay) return;
       window.history.replaceState(null, "", `/orders/${params.id}`);
-      setJustPlaced(true);
+      if (placed) setJustPlaced(true);
+      if (pay) setPayOpen(true);
     });
     load();
     const id = setInterval(load, 30_000);
@@ -83,7 +89,11 @@ export default function OrderPage() {
                 <Sparkle className="mt-1 h-5 w-5 shrink-0 text-gold" />
                 <div>
                   <p className="font-display text-xl uppercase tracking-[0.04em] text-gold">{t("order.placedTitle")}</p>
-                  <p className="mt-1 text-cream/85">{t("order.placedBody").replace("{amount}", formatPrice(o.total_amount))}</p>
+                  <p className="mt-1 text-cream/85">
+                    {o.payment_method === "partial"
+                      ? t("order.placedBodyAdvance").replace("{advance}", formatPrice(o.advance_amount)).replace("{cod}", formatPrice(o.cod_amount))
+                      : t("order.placedBody").replace("{amount}", formatPrice(o.total_amount))}
+                  </p>
                 </div>
               </div>
             )}
@@ -95,6 +105,39 @@ export default function OrderPage() {
               </div>
               <OrderStatusBadge status={o.status} />
             </div>
+
+            {/* Online advance */}
+            {o.payment_method === "partial" && o.status !== "cancelled" && (
+              <section className={`mt-8 border px-6 py-5 md:px-8 ${
+                o.status === "pending_payment" ? "border-gold/60 bg-gold/10" : "border-line bg-ink/85"}`}>
+                {o.status === "pending_payment" ? (
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <p className="text-cream/90">{t("order.payAdvance").replace("{advance}", formatPrice(o.advance_amount))}</p>
+                    <button type="button" onClick={() => setPayOpen(true)}
+                      className="inline-flex items-center gap-3 bg-white px-7 py-4 text-[13px] font-extrabold uppercase tracking-[0.16em] text-ink transition-colors hover:bg-gold">
+                      <Sparkle className="h-3.5 w-3.5 text-gold-deep" />
+                      {t("booking.payNow")}
+                    </button>
+                  </div>
+                ) : o.status === "payment_submitted" ? (
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <p className="text-cream/90">
+                      {t("order.advanceVerifying")}
+                      {o.payment_reference && <span className="mt-1 block text-sm text-cream/65">{t("pay.reference")}: {o.payment_reference}</span>}
+                    </p>
+                    <button type="button" onClick={() => setPayOpen(true)}
+                      className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-gold hover:underline">
+                      {t("pay.showQrAgain")}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="flex items-center gap-3 text-cream/90">
+                    <Sparkle className="h-3.5 w-3.5 shrink-0 text-gold" />
+                    {t("order.advancePaid").replace("{advance}", formatPrice(o.advance_amount))}
+                  </p>
+                )}
+              </section>
+            )}
 
             {/* Progress */}
             <section className="mt-8 border border-line bg-ink/85 p-6 backdrop-blur-sm md:p-8">
@@ -151,11 +194,27 @@ export default function OrderPage() {
                     </li>
                   ))}
                 </ul>
-                <div className="mt-3 flex items-baseline justify-between border-t border-line pt-4">
-                  <span className="text-[12px] font-extrabold uppercase tracking-[0.14em]">{t("order.toPay")}</span>
-                  <span className="text-2xl">{formatPrice(o.total_amount)}</span>
-                </div>
-                <p className="mt-1 text-right text-xs text-cream/55">{t("shop.cod")}</p>
+                {o.payment_method === "partial" ? (
+                  <div className="mt-3 space-y-2 border-t border-line pt-4 text-sm">
+                    <p className="flex justify-between gap-4"><span className="text-cream/70">{t("shop.total")}</span><span>{formatPrice(o.total_amount)}</span></p>
+                    <p className="flex justify-between gap-4">
+                      <span className="text-cream/70">{t("order.advanceOnline")}</span>
+                      <span className="text-gold">{formatPrice(o.advance_amount)}</span>
+                    </p>
+                    <p className="flex items-baseline justify-between gap-4">
+                      <span className="text-[12px] font-extrabold uppercase tracking-[0.14em]">{t("order.toPay")}</span>
+                      <span className="text-2xl">{formatPrice(o.cod_amount)}</span>
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mt-3 flex items-baseline justify-between border-t border-line pt-4">
+                      <span className="text-[12px] font-extrabold uppercase tracking-[0.14em]">{t("order.toPay")}</span>
+                      <span className="text-2xl">{formatPrice(o.total_amount)}</span>
+                    </div>
+                    <p className="mt-1 text-right text-xs text-cream/55">{t("shop.cod")}</p>
+                  </>
+                )}
               </section>
 
               <section className="h-fit border border-line bg-ink/85 p-6 backdrop-blur-sm md:p-8">
@@ -170,12 +229,15 @@ export default function OrderPage() {
               </section>
             </div>
 
-            {(o.status === "placed" || o.status === "confirmed") && (
+            {(o.status === "pending_payment" || o.status === "placed" || o.status === "confirmed") && (
               <button type="button" onClick={cancel} className="mt-8 text-sm text-cream/55 underline-offset-4 hover:text-gold hover:underline">
                 {t("order.cancel")}
               </button>
             )}
             {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+            {payOpen && (
+              <UpiPayModal kind="order" id={o.id} onClose={closePay} onSubmitted={() => { load(); setPayOpen(false); }} />
+            )}
           </>
         )}
       </div>

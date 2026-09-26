@@ -11,11 +11,13 @@ import ClearDataButton from "./ClearDataButton";
 
 const NAV = [
   { href: "/admin/bookings", label: "Consultations", icon: "M4 4h16v16H4zM4 9h16M9 4v5" },
+  { href: "/admin/rituals", label: "Ritual requests", icon: "M12 3c-2 3-4 4.5-4 7.5a4 4 0 0 0 8 0C16 7.5 14 6 12 3ZM12 14v7M8 21h8" },
   { href: "/admin/chats", label: "Chats", icon: "M4 5h16v11H8l-4 4V5Z" },
   { href: "/admin/orders", label: "Orders", icon: "M5 8h14l-1.2 12H6.2L5 8ZM9 10V6a3 3 0 0 1 6 0v4" },
   { href: "/admin/products", label: "Products", icon: "M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18ZM12 7a5 5 0 1 0 0 10a5 5 0 0 0 0-10Z" },
   { href: "/admin/messages", label: "Messages", icon: "M3 6h18v12H3zM3 6l9 7 9-7" },
   { href: "/admin/home", label: "Home page", icon: "M3 11l9-8 9 8M5 10v10h14V10" },
+  { href: "/admin/tarot", label: "Tarot sessions", icon: "M7 3h10v18H7zM12 8l1.2 2.6 2.8.4-2 2 .5 2.8L12 14.5 9.5 15.8l.5-2.8-2-2 2.8-.4z" },
   { href: "/admin/site", label: "Site settings", icon: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1" },
   { href: "/admin/payments", label: "Payments", icon: "M3 6h18v12H3zM3 10h18M7 15h3" },
 ];
@@ -26,6 +28,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const [me, setMe] = useState<MeOut | null>(null);
   const [unread, setUnread] = useState(0);
   const [waiting, setWaiting] = useState(0); // new requests + "I have paid"
+  const [ritualsWaiting, setRitualsWaiting] = useState(0);
   const [openOrders, setOpenOrders] = useState(0);
   const [newMessages, setNewMessages] = useState(0);
 
@@ -43,7 +46,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     if (!me) return;
     const refresh = () => {
       unreadChats().then((r) => setUnread(r.unread)).catch(() => {});
-      bookingCounts().then((c) => setWaiting(c.pending + c.payment_submitted)).catch(() => {});
+      bookingCounts("consultation").then((c) => setWaiting(c.pending + c.payment_submitted)).catch(() => {});
+      bookingCounts("ritual").then((c) => setRitualsWaiting(c.pending + c.payment_submitted)).catch(() => {});
       orderCounts().then((c) => setOpenOrders(c.open)).catch(() => {});
       messageCounts().then((c) => setNewMessages(c.unhandled)).catch(() => {});
     };
@@ -85,7 +89,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                 </svg>
                 {n.label}
                 {(() => {
-                  const count = { "/admin/chats": unread, "/admin/bookings": waiting, "/admin/orders": openOrders, "/admin/messages": newMessages }[n.href] ?? 0;
+                  const count = { "/admin/chats": unread, "/admin/bookings": waiting, "/admin/rituals": ritualsWaiting, "/admin/orders": openOrders, "/admin/messages": newMessages }[n.href] ?? 0;
                   return count > 0 ? (
                     <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1.5 text-[11px] font-bold text-ink">{count}</span>
                   ) : null;

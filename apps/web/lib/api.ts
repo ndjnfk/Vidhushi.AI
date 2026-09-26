@@ -80,20 +80,27 @@ export interface GunaMilanOut {
   max_points: number;
 }
 
-// Keeps the old "API error <status>: <body>" message; adds the status and
-// FastAPI's `detail` for callers that need to branch on them.
+// The message is FastAPI's `detail` (readable, shown to users as-is); the
+// status and raw body stay available for callers that need to branch on them.
 export class ApiError extends Error {
   constructor(public status: number, public body: string) {
-    super(`API error ${status}: ${body}`);
+    super(ApiError.readable(status, body));
   }
 
   get detail(): string {
+    return ApiError.readable(this.status, this.body);
+  }
+
+  private static readable(status: number, body: string): string {
     try {
-      const d = JSON.parse(this.body)?.detail;
-      return typeof d === "string" ? d : this.body;
+      const d = JSON.parse(body)?.detail;
+      if (typeof d === "string") return d;
+      // 422 validation errors: a list of { msg, loc }.
+      if (Array.isArray(d) && typeof d[0]?.msg === "string") return d[0].msg;
     } catch {
-      return this.body;
+      // not JSON
     }
+    return body.trim() || `Request failed (${status})`;
   }
 }
 

@@ -1,6 +1,7 @@
 """UPI payment settings, resolved from the admin-edited UpiSettings row with
 the UPI_ID env setting as a fallback."""
 import base64
+from urllib.parse import quote, urlencode
 
 from app.core.config import get_settings
 from app.models.models import UpiSettings
@@ -19,6 +20,12 @@ async def get_upi_settings() -> UpiSettings:
         s = get_settings()
         row = UpiSettings(upi_id=s.upi_id or "", payee_name=s.upi_payee_name)
     return row
+
+
+def upi_uri(upi_id: str, payee: str, amount: float, note: str) -> str:
+    """A upi:// link with the amount filled in (rendered as a QR by the site)."""
+    q = urlencode({"pa": upi_id, "pn": payee, "am": f"{amount:.2f}", "cu": "INR", "tn": note}, quote_via=quote)
+    return f"upi://pay?{q}"
 
 
 def qr_data_url(row: UpiSettings) -> str | None:

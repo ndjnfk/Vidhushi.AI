@@ -23,7 +23,7 @@ def emails(monkeypatch):
     return sent
 
 
-ADDRESS = ShippingAddressIn(full_name="Asha Verma", phone="9876543210", line1="12 MG Road", city="Delhi", state="Delhi", pincode="110001")
+ADDRESS = ShippingAddressIn(full_name="Asha Verma", phone="9876543210", line1="12 MG Road", city="Saharanpur", state="Uttar Pradesh", pincode="247001")  # local: fully COD
 
 
 async def _setup():

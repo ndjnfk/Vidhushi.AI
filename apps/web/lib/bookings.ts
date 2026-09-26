@@ -1,5 +1,16 @@
 import { apiFetch } from "@/lib/api";
 
+export type Channel = "chat" | "audio" | "video";
+
+// A session with Vidushi Ji, or a healing-ritual request (managed on its own admin page).
+export type BookingKind = "consultation" | "ritual";
+
+// One line of the fee Vidushi Ji sets when approving, e.g. "Session" 999.
+export interface FeeItem {
+  label: string;
+  amount: number;
+}
+
 export type Topic = "love" | "career" | "marriage" | "other";
 export type BookingStatus =
   | "pending" | "approved" | "payment_submitted" | "confirmed" | "completed" | "rejected" | "cancelled";
@@ -11,6 +22,10 @@ export interface ConsultationRequestIn {
   place: string;
   topic: Topic;
   message: string;
+  session_id?: string; // tarot session, if any
+  kind?: BookingKind;
+  photos?: string[]; // the client's face photo (data: URL); one, for sessions and rituals
+  dob?: string; // YYYY-MM-DD; required for sessions and rituals
 }
 
 export interface ConsultationRequestOut extends ConsultationRequestIn {
@@ -22,6 +37,13 @@ export interface ConsultationRequestOut extends ConsultationRequestIn {
   admin_note: string;
   created_at: string;
   payment_reference: string;
+  session_id: string;
+  session_name: string;
+  fee_items: FeeItem[]; // break-up of `amount`; empty = single fee
+  kind: BookingKind;
+  photo_count: number;
+  dob: string; // YYYY-MM-DD, "" if not given
+  channels: Channel[]; // what the customer gets once confirmed
 }
 
 export interface UpiPaymentInfoOut {
@@ -51,6 +73,13 @@ export function parseUtc(iso: string): Date {
   return new Date(/[zZ]|[+-]\d\d:\d\d$/.test(iso) ? iso : `${iso}Z`);
 }
 
+/** "1995-03-12" -> "12 Mar 1995". */
+export function formatDob(dob: string): string {
+  const [y, m, d] = dob.split("-").map(Number);
+  if (!y || !m || !d) return dob;
+  return new Date(y, m - 1, d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
 export function formatSlot(iso: string | null): string {
   if (!iso) return "—";
   return parseUtc(iso).toLocaleString("en-IN", {
@@ -62,6 +91,7 @@ export const createBooking = (body: ConsultationRequestIn) =>
   apiFetch<ConsultationRequestOut>("/bookings", { method: "POST", body: JSON.stringify(body) });
 export const myBookings = () => apiFetch<ConsultationRequestOut[]>("/bookings/mine");
 export const getBooking = (id: string) => apiFetch<ConsultationRequestOut>(`/bookings/${id}`);
+export const getMyPhotos = (id: string) => apiFetch<string[]>(`/bookings/${id}/photos`);
 export const cancelBooking = (id: string) => apiFetch<ConsultationRequestOut>(`/bookings/${id}/cancel`, { method: "POST" });
 export const getPaymentInfo = (id: string) => apiFetch<UpiPaymentInfoOut>(`/bookings/${id}/payment-info`);
 export const submitPayment = (id: string, reference: string) =>
@@ -71,7 +101,7 @@ export const submitPayment = (id: string, reference: string) =>
 // "/admin/bookings/<id>" for the host), sent with the given fetcher.
 export function makeCallApi(base: string, fetcher: <T>(path: string, options?: RequestInit) => Promise<T>) {
   return {
-    getCallInfo: () => fetcher<CallInfoOut>(`${base}/call`),
+    getCallInfo: (mode?: "audio" | "video") => fetcher<CallInfoOut>(`${base}/call${mode ? `?mode=${mode}` : ""}`),
     sendSignal: (kind: CallSignalOut["kind"], data: Record<string, unknown> = {}) =>
       fetcher<CallSignalOut>(`${base}/signal`, { method: "POST", body: JSON.stringify({ kind, data }) }),
     pollSignals: (after: string) => fetcher<CallSignalOut[]>(`${base}/signal?after=${encodeURIComponent(after)}`),

@@ -76,6 +76,7 @@ export default function CallView({ api, chatApi, mode, backHref }: { api: CallAp
     "too-early": "call.tooEarly",
     "ended-window": "call.endedWindow",
     unavailable: "call.unavailable",
+    "not-included": "call.notIncluded",
     "media-error": "call.mediaError",
     left: "call.left",
   };

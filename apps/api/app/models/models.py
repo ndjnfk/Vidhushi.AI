@@ -294,6 +294,14 @@ class ShopOrder(Document):
     customer_email: str = ""
     courier: str = ""
     tracking_number: str = ""
+    # payment_method "cod": all on delivery. "partial": `advance_amount` paid
+    # online by UPI first (status pending_payment -> payment_submitted ->
+    # confirmed when Vidushi Ji sees the money), `cod_amount` on delivery.
+    advance_amount: float = 0
+    cod_amount: float | None = None  # None on older orders = the whole total
+    payment_reference: str = ""
+    payment_submitted_at: datetime | None = None
+    payment_received_at: datetime | None = None
     history: list[OrderStatusEvent] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -316,6 +324,16 @@ class BlogPost(Document):
     class Settings:
         name = "blog_posts"
         indexes = [IndexModel("slug", unique=True)]
+
+
+# What a customer can use on a confirmed booking (set per tarot session by the admin).
+CHANNELS = ("chat", "audio", "video")
+
+
+class FeeItem(BaseModel):
+    """One line of a booking's fee, e.g. "Session" ₹999, "Healing ritual" ₹500."""
+    label: str
+    amount: float
 
 
 class ConsultationRequest(Document):
@@ -345,6 +363,19 @@ class ConsultationRequest(Document):
     payment_reference: str = ""  # UPI transaction id / UTR the client entered
     payment_submitted_at: datetime | None = None
     payment_received_at: datetime | None = None
+    # Tarot session booked (empty for a general consultation) and what it
+    # includes once confirmed — copied from the session when booked, so
+    # later admin edits don't change what this customer paid for.
+    session_id: str = ""
+    session_name: str = ""
+    ritual_interest: str = ""  # no longer offered; kept so older bookings still load
+    photo_count: int = 0  # photos the client attached (BookingPhoto rows)
+    dob: str = ""  # client's date of birth, YYYY-MM-DD
+    fee_items: list[FeeItem] = Field(default_factory=list)  # break-up of `amount`; empty = single fee
+    # "consultation" (tarot/astrology session) or "ritual" (healing-ritual
+    # request from the Rituals page). Same flow; listed separately in the admin.
+    kind: str = "consultation"
+    channels: list[str] = Field(default_factory=lambda: list(CHANNELS))
 
     class Settings:
         name = "consultation_requests"
@@ -496,6 +527,67 @@ class HomeContent(Document):
 
     class Settings:
         name = "home_content"
+
+
+class TarotSession(BaseModel):
+    id: str  # stable; booking links use it (?book=tarot:<id>)
+    group: str  # "call" | "reading" | "area"
+    name: str
+    description: str
+    price: int | None = None  # None = "price on request"
+    tag: str = ""  # small label on the card, e.g. "15 min"
+    # What the customer gets once the booking is confirmed.
+    channels: list[str] = Field(default_factory=lambda: list(CHANNELS))
+
+
+class TarotModality(BaseModel):
+    name: str
+    icon: str = "any"  # one of the site's built-in glyphs
+
+
+class TarotStep(BaseModel):
+    title: str
+    body: str
+    items: list[str] = Field(default_factory=list)
+
+
+class TarotContent(Document):
+    """Single admin-editable row with the home page's tarot sections.
+    Empty text / empty lists mean "use the built-in (translated) default",
+    so a fresh database shows the original content."""
+    tagline: str = ""
+    badges: list[str] = Field(default_factory=list)
+    sessions_title: str = ""
+    sessions_subtitle: str = ""
+    sessions: list[TarotSession] = Field(default_factory=list)
+    areas_title: str = ""
+    areas_subtitle: str = ""
+    areas_note: str = ""
+    modalities_title: str = ""
+    modalities_intro: str = ""
+    modalities_note: str = ""
+    modalities: list[TarotModality] = Field(default_factory=list)
+    how_title: str = ""
+    steps: list[TarotStep] = Field(default_factory=list)
+    how_note: str = ""
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "tarot_content"
+
+
+class BookingPhoto(Document):
+    """A photo a client attached to a session or ritual request (e.g. palms).
+    Private: served only to that client and to the admin, never by public URL."""
+    request_id: str
+    position: int
+    data: bytes
+    content_type: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "booking_photos"
+        indexes = [IndexModel([("request_id", 1), ("position", 1)])]
 
 
 class SiteImage(Document):

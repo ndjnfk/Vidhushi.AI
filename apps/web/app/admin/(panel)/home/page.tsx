@@ -87,8 +87,8 @@ export default function AdminHomePage() {
               <ImagePicker url={c.hero_image_url} fallback="/home/hero.jpg" upload={up("hero")} onChange={(u) => set({ hero_image_url: u })} />
             </div>
             <div className="flex flex-col gap-5">
-              <Text label={t("adminHome.heading")} value={c.hero_title} onChange={(v) => set({ hero_title: v })} placeholder={t("home.heroTitle")} max={200} />
-              <Text label={t("adminHome.text")} value={c.hero_text} onChange={(v) => set({ hero_text: v })} placeholder={t("home.heroAbout")} area max={1000} />
+              <Text label={t("adminHome.heading")} value={c.hero_title} onChange={(v) => set({ hero_title: v })} placeholder={t("tarot.heroTitle")} max={200} />
+              <Text label={t("adminHome.text")} value={c.hero_text} onChange={(v) => set({ hero_text: v })} placeholder={t("tarot.heroIntro")} area max={1000} />
             </div>
           </div>
         </Section>

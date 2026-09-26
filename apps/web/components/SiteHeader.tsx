@@ -17,20 +17,18 @@ import { telHref, useSiteInfo } from "@/lib/useSiteInfo";
 import { useCart } from "@/lib/CartContext";
 import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
 
-// Shown inline on wide screens; the drawer (mobile) adds home and rituals.
+// Shown inline on wide screens; the drawer (mobile) adds home and about.
 const PRIMARY_NAV = [
   { href: "/kundli", key: "nav.kundli" },
   { href: "/matching", key: "nav.matching" },
-  { href: "/tarot", key: "nav.tarot" },
+  { href: "/rituals", key: "nav.rituals" },
   { href: "/shop", key: "nav.shop" },
 ];
 
 const DRAWER_NAV = [
   { href: "/", key: "nav.home" },
   { href: "/about", key: "nav.about" },
-  ...PRIMARY_NAV.slice(0, 3),
-  { href: "/rituals", key: "nav.rituals" },
-  ...PRIMARY_NAV.slice(3),
+  ...PRIMARY_NAV,
 ];
 
 const ICON_BUTTON =

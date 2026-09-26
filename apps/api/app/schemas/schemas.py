@@ -1,6 +1,6 @@
 from datetime import date, datetime, time
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 
 class BirthDetailsIn(BaseModel):
@@ -468,6 +468,22 @@ class ShopOrderOut(BaseModel):
     tracking_number: str
     history: list[OrderStatusEventOut]
     created_at: datetime
+    advance_amount: float = 0  # paid online before shipping ("partial")
+    cod_amount: float = 0  # collected on delivery
+    payment_reference: str = ""
+
+
+class PaymentPlanIn(BaseModel):
+    items: list[CartItemIn]
+    pincode: str = Field(min_length=4, max_length=10)
+
+
+class PaymentPlanOut(BaseModel):
+    """How this order would be paid. The rule behind it stays on the server."""
+    method: str  # "cod" | "partial"
+    total: float
+    advance_amount: float
+    cod_amount: float
 
 
 class ShopOrderStatusIn(BaseModel):
@@ -490,6 +506,31 @@ class ConsultationRequestIn(BaseModel):
     place: str = Field(min_length=1, max_length=200)
     topic: str = Field(pattern="^(love|career|marriage|other)$")
     message: str = Field(default="", max_length=2000)
+    session_id: str = Field(default="", pattern=r"^[a-z0-9-]{0,40}$")  # tarot session, if any
+    kind: str = Field(default="consultation", pattern="^(consultation|ritual)$")
+    # The client's face photo as a data: URL (PNG/JPEG/WebP). Exactly one is
+    # required for tarot sessions and ritual requests (checked on create).
+    photos: list[str] = Field(default_factory=list, max_length=1)
+    dob: str = ""  # YYYY-MM-DD; required for tarot sessions and rituals (checked on create)
+
+    @field_validator("dob")
+    @classmethod
+    def _valid_dob(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            return v
+        try:
+            d = datetime.strptime(v, "%Y-%m-%d").date()
+        except ValueError:
+            raise ValueError("Date of birth must be a valid date")
+        if d.year < 1900 or d > datetime.utcnow().date():
+            raise ValueError("Date of birth must be a past date")
+        return v
+
+
+class FeeItemIn(BaseModel):
+    label: str = Field(min_length=1, max_length=60)
+    amount: float = Field(ge=0, le=10_000_000)
 
 
 class ConsultationRequestOut(BaseModel):
@@ -507,13 +548,40 @@ class ConsultationRequestOut(BaseModel):
     admin_note: str
     created_at: datetime
     payment_reference: str = ""
+    session_id: str = ""
+    session_name: str = ""
+    fee_items: list[FeeItemIn] = Field(default_factory=list)
+    kind: str = "consultation"
+    photo_count: int = 0
+    dob: str = ""
+    channels: list[str] = Field(default_factory=lambda: ["chat", "audio", "video"])
 
 
 class ConsultationApproveIn(BaseModel):
     scheduled_at: datetime  # sent by the admin UI as UTC ISO string
     duration_minutes: int = Field(gt=0, le=240)
-    amount: float = Field(ge=0)
+    # Either a break-up (the total is its sum) or a single amount.
+    fee_items: list[FeeItemIn] = Field(default_factory=list, max_length=8)
+    amount: float | None = Field(default=None, ge=0)
     note: str = Field(default="", max_length=1000)
+    # Ritual requests only: what the client gets once confirmed. (Consultations
+    # follow their tarot session's setting.) None = leave unchanged.
+    channels: list[str] | None = Field(default=None, min_length=1, max_length=3)
+
+    @field_validator("channels")
+    @classmethod
+    def _known_channels(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        if not set(v) <= {"chat", "audio", "video"}:
+            raise ValueError("channels must be chat, audio or video")
+        return [c for c in ("chat", "audio", "video") if c in v]
+
+    @model_validator(mode="after")
+    def _fee_given(self):
+        if not self.fee_items and self.amount is None:
+            raise ValueError("Enter the fee")
+        return self
 
 
 class ConsultationDecisionIn(BaseModel):
@@ -689,4 +757,57 @@ class HomeContentIn(BaseModel):
 
 
 class HomeContentOut(HomeContentIn):
+    pass
+
+
+TAROT_ICONS = "tarot|runes|oracle|dice|cartomancy|palmistry|numerology|any|love|career|health"
+
+
+class TarotSessionIn(BaseModel):
+    id: str = Field(pattern=r"^[a-z0-9-]{1,40}$")
+    group: str = Field(pattern="^(call|reading|area)$")
+    name: str = Field(min_length=1, max_length=80)
+    description: str = Field(default="", max_length=500)
+    price: int | None = Field(default=None, ge=0, le=10_000_000)
+    tag: str = Field(default="", max_length=30)
+    channels: list[str] = Field(default_factory=lambda: ["chat", "audio", "video"], min_length=1, max_length=3)
+
+    @field_validator("channels")
+    @classmethod
+    def _known_channels(cls, v: list[str]) -> list[str]:
+        if not set(v) <= {"chat", "audio", "video"}:
+            raise ValueError("channels must be chat, audio or video")
+        return [c for c in ("chat", "audio", "video") if c in v]
+
+
+class TarotModalityIn(BaseModel):
+    name: str = Field(min_length=1, max_length=40)
+    icon: str = Field(default="any", pattern=f"^({TAROT_ICONS})$")
+
+
+class TarotStepIn(BaseModel):
+    title: str = Field(min_length=1, max_length=120)
+    body: str = Field(default="", max_length=500)
+    items: list[str] = Field(default_factory=list, max_length=10)
+
+
+class TarotContentIn(BaseModel):
+    tagline: str = Field(default="", max_length=200)
+    badges: list[str] = Field(default_factory=list, max_length=6)
+    sessions_title: str = Field(default="", max_length=120)
+    sessions_subtitle: str = Field(default="", max_length=300)
+    sessions: list[TarotSessionIn] = Field(default_factory=list, max_length=30)
+    areas_title: str = Field(default="", max_length=120)
+    areas_subtitle: str = Field(default="", max_length=300)
+    areas_note: str = Field(default="", max_length=500)
+    modalities_title: str = Field(default="", max_length=120)
+    modalities_intro: str = Field(default="", max_length=500)
+    modalities_note: str = Field(default="", max_length=800)
+    modalities: list[TarotModalityIn] = Field(default_factory=list, max_length=12)
+    how_title: str = Field(default="", max_length=120)
+    steps: list[TarotStepIn] = Field(default_factory=list, max_length=6)
+    how_note: str = Field(default="", max_length=500)
+
+
+class TarotContentOut(TarotContentIn):
     pass

@@ -1,17 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import BookConsultationButton from "@/components/booking/BookConsultation";
 import Planet from "@/components/Planet";
 import ProductSlider from "@/components/shop/ProductSlider";
 import AboutSection from "@/components/home/AboutSection";
 import Stats from "@/components/home/Stats";
+import TarotServices from "@/components/home/TarotServices";
 import Testimonials from "@/components/home/Testimonials";
 import Sparkle from "@/components/Sparkle";
 import Starfield from "@/components/Starfield";
 import ZodiacWheel from "@/components/ZodiacWheel";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useHomeContent } from "@/lib/useHomeContent";
+import { useTarotContent } from "@/lib/useTarotContent";
 
 // Default photo inside the arch; the admin can upload another ("Home page").
 const DEFAULT_HERO_IMAGE = "/home/hero.jpg";
@@ -47,6 +48,7 @@ function HeroArt({ image }: { image: string }) {
 export default function Home() {
   const { t } = useLanguage();
   const home = useHomeContent();
+  const tarot = useTarotContent();
 
   return (
     <div className="-mx-6 -my-8 overflow-x-clip bg-ink font-body text-cream">
@@ -55,30 +57,48 @@ export default function Home() {
 
         <div className="flex items-center px-6 py-16 md:px-16 lg:px-[12%]">
           <div className="max-w-2xl">
-            <h1 className="font-display text-[clamp(2.4rem,4.4vw,4.4rem)] uppercase leading-[1.12] tracking-[0.04em] text-gold">
-              {home?.hero_title || t("home.heroTitle")}
+            <h1 className="font-display text-[clamp(2.4rem,4.4vw,4.4rem)] uppercase leading-[1.08] tracking-[0.04em] text-gold">
+              {home?.hero_title || t("tarot.heroTitle")}
             </h1>
-            <p className="mt-8 text-[1.15rem] leading-[1.75] text-cream/85">{home?.hero_text || t("home.heroAbout")}</p>
-            <div className="mt-12 flex flex-wrap gap-4">
+            <p className="mt-6 font-display text-[clamp(1.15rem,1.7vw,1.45rem)] italic leading-snug text-cream">{tarot.tagline}</p>
+            {home?.hero_text ? (
+              <p className="mt-6 text-[1.1rem] leading-relaxed text-cream/85">{home.hero_text}</p>
+            ) : (
+              <>
+                <p className="mt-6 text-[1.1rem] leading-relaxed text-cream/85">{t("tarot.heroIntro")}</p>
+                <p className="mt-4 text-[1.1rem] leading-relaxed text-cream/85">{t("tarot.heroIntro2")}</p>
+              </>
+            )}
+            <ul className="mt-8 flex flex-wrap gap-3">
+              {tarot.badges.map((b, i) => (
+                <li key={`${b}-${i}`} className="flex items-center gap-2 border border-line px-4 py-2 text-[12px] font-extrabold uppercase tracking-[0.12em] text-cream/80">
+                  <Sparkle className="h-2.5 w-2.5 text-gold" />
+                  {b}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-10 flex flex-wrap gap-4">
               <BookConsultationButton
+                preset={{ kind: "tarot" }}
                 className="inline-flex items-center gap-3 bg-white px-9 py-5 text-[13px] font-extrabold uppercase tracking-[0.16em] text-ink transition-colors hover:bg-gold"
               >
                 <Sparkle className="h-3.5 w-3.5 text-gold-deep" />
-                {t("home.ctaBook")}
+                {t("tarot.ctaBook")}
               </BookConsultationButton>
-              <Link
-                href="/kundli"
+              <a
+                href="#sessions"
                 className="inline-flex items-center gap-3 border border-cream/40 px-9 py-5 text-[13px] font-extrabold uppercase tracking-[0.16em] text-cream transition-colors hover:border-gold hover:text-gold"
               >
                 <Sparkle className="h-3.5 w-3.5 text-gold" />
-                {t("home.ctaKundli")}
-              </Link>
+                {t("tarot.ctaSessions")}
+              </a>
             </div>
           </div>
         </div>
       </section>
 
       <AboutSection />
+      <TarotServices />
       <ProductSlider category="bracelet" title={t("home.braceletsTitle")} subtitle={t("home.braceletsSubtitle")} />
       <Stats />
       <Testimonials />

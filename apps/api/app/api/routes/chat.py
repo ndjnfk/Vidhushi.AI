@@ -21,6 +21,13 @@ router = APIRouter(prefix="/bookings", tags=["chat"])
 
 SENDABLE = ("approved", "payment_submitted", "confirmed")
 READABLE = SENDABLE + ("completed",)
+# Before confirmation chat is always open (to sort out payment and timing);
+# after it, only if the booked session includes chat.
+AFTER_CONFIRMATION = ("confirmed", "completed")
+
+
+def chat_included(r: ConsultationRequest) -> bool:
+    return r.status not in AFTER_CONFIRMATION or "chat" in r.channels
 
 
 def message_out(m: ChatMessage) -> ChatMessageOut:
@@ -36,6 +43,8 @@ async def read_thread(r: ConsultationRequest, reader: str, after: str | None) ->
     """Messages newer than `after` (all if omitted); marks the other side's
     messages as read by `reader`."""
     require_readable(r)
+    if reader == "client" and not chat_included(r):
+        raise HTTPException(status_code=403, detail="Chat isn't included in this session")
     query: dict = {"request_id": str(r.id)}
     if after:
         try:
@@ -46,12 +55,14 @@ async def read_thread(r: ConsultationRequest, reader: str, after: str | None) ->
     await ChatMessage.find(
         {"request_id": str(r.id), "sender": {"$ne": reader}, "read_at": None}
     ).update_many({"$set": {"read_at": datetime.utcnow()}})
-    return ChatThreadOut(can_send=r.status in SENDABLE, messages=[message_out(m) for m in rows])
+    return ChatThreadOut(can_send=r.status in SENDABLE and chat_included(r), messages=[message_out(m) for m in rows])
 
 
 async def post_message(r: ConsultationRequest, sender: str, text: str) -> ChatMessageOut:
     if r.status not in SENDABLE:
         raise HTTPException(status_code=400, detail="This chat is closed")
+    if not chat_included(r):
+        raise HTTPException(status_code=403, detail="Chat isn't included in this session")
     text = text.strip()
     if not text:
         raise HTTPException(status_code=422, detail="Message is empty")

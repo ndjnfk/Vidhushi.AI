@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { API_URL } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
@@ -103,18 +103,46 @@ export function useLive(topic: LiveTopic, fn: () => void) {
   useEffect(() => subscribeLive(topic, () => ref.current()), [topic]);
 }
 
+const noopSubscribe = () => () => {};
+
 /** Data shared by every component on the page: fetched once, refetched
- *  whenever its topic changes. */
-export function createLiveResource<T>(topic: LiveTopic, fetcher: () => Promise<T>) {
+ *  whenever its topic changes. With `cacheKey`, the last good response is
+ *  kept in localStorage and shown while loading or whenever the API (or its
+ *  database) is unreachable, so admin-edited content never goes blank. */
+export function createLiveResource<T>(topic: LiveTopic, fetcher: () => Promise<T>, cacheKey?: string) {
   let value: T | null = null;
   let pending: Promise<void> | null = null;
   let stopLive: (() => void) | null = null;
   const subs = new Set<(v: T) => void>();
 
+  // Parsed once per stored string, so useSyncExternalStore sees a stable value.
+  let cachedRaw: string | null = null;
+  let cachedValue: T | null = null;
+  const readCache = (): T | null => {
+    if (!cacheKey) return null;
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (raw !== cachedRaw) {
+        cachedRaw = raw;
+        cachedValue = raw ? (JSON.parse(raw) as T) : null;
+      }
+    } catch {
+      // storage blocked or corrupt: no cache
+    }
+    return cachedValue;
+  };
+
   const load = () => {
     pending ??= fetcher()
       .then((v) => {
         value = v;
+        if (cacheKey) {
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify(v));
+          } catch {
+            // storage full or blocked: still show the fresh value
+          }
+        }
         subs.forEach((s) => s(v));
       })
       .catch(() => {})
@@ -124,6 +152,8 @@ export function createLiveResource<T>(topic: LiveTopic, fetcher: () => Promise<T
   };
 
   return function useResource(): T | null {
+    // Server render and hydration see no cache; the client then picks it up.
+    const cached = useSyncExternalStore(noopSubscribe, readCache, () => null);
     const [v, setV] = useState<T | null>(value);
     useEffect(() => {
       subs.add(setV);
@@ -138,6 +168,6 @@ export function createLiveResource<T>(topic: LiveTopic, fetcher: () => Promise<T
         }
       };
     }, []);
-    return v;
+    return v ?? cached;
   };
 }

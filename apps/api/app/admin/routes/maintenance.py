@@ -12,6 +12,7 @@ from app.admin.deps import get_current_admin
 from app.core.live import PRODUCTS, bump
 from app.core.security import verify_password
 from app.models.models import (
+    BookingPhoto,
     CallSignal,
     ChatMessage,
     ConsultationBooking,
@@ -34,6 +35,7 @@ CONFIRM_WORD = "DELETE"
 TARGETS = [
     (User, {"is_admin": {"$ne": True}}),
     (ConsultationRequest, {}),
+    (BookingPhoto, {}),
     (ChatMessage, {}),
     (CallSignal, {}),
     (ConsultationBooking, {}),

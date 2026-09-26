@@ -25,7 +25,7 @@ const EMPTY: SiteInfo = { phone: "", email: "", address: "", hours: "", whatsapp
 
 // Shared by the header, footer and contact page; refreshes live when the
 // admin saves Site settings.
-const useSiteResource = createLiveResource("site", () => apiFetch<SiteInfo>("/site"));
+const useSiteResource = createLiveResource("site", () => apiFetch<SiteInfo>("/site"), "vidushiji_site_v1");
 
 export function useSiteInfo(): SiteInfo {
   return useSiteResource() ?? EMPTY;

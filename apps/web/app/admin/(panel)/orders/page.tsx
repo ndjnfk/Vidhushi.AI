@@ -6,18 +6,20 @@ import Sparkle from "@/components/Sparkle";
 import { parseUtc } from "@/lib/bookings";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { formatPrice, type OrderStatus, type ShopOrderOut } from "@/lib/shop";
-import { listOrders, updateOrderStatus } from "../../_lib/api";
+import { listOrders, markOrderPaymentReceived, updateOrderStatus } from "../../_lib/api";
 import StatusTabs, { MovedNotice } from "../../_components/StatusTabs";
 
 // In the order an order moves through them.
-const TABS = ["placed", "confirmed", "shipped", "delivered", "cancelled", "all"] as const;
+const TABS = ["pending_payment", "payment_submitted", "placed", "confirmed", "shipped", "delivered", "cancelled", "all"] as const;
 type Tab = (typeof TABS)[number];
-const URGENT: Tab[] = ["placed", "confirmed"]; // still to be packed / sent
-const tabOf = (s: OrderStatus): Tab => (s === "pending_payment" ? "placed" : s);
+const URGENT: Tab[] = ["payment_submitted", "placed", "confirmed"]; // waiting on Vidushi Ji
+const tabOf = (s: OrderStatus): Tab => s;
 type Moved = (id: string, status: OrderStatus) => void;
 // Next steps offered for each status (mirrors the API's allowed moves).
 const NEXT: Record<OrderStatus, OrderStatus[]> = {
-  pending_payment: ["confirmed", "cancelled"],
+  // Awaiting the online advance: confirmed via "Payment received".
+  pending_payment: ["cancelled"],
+  payment_submitted: ["cancelled"],
   placed: ["confirmed", "shipped", "cancelled"],
   confirmed: ["shipped", "cancelled"],
   shipped: ["delivered"],
@@ -71,7 +73,14 @@ function OrderCard({ o, onChange, focused }: { o: ShopOrderOut; onChange: Moved;
         <div className="flex items-center gap-4">
           <span className="text-right">
             <span className="block text-xl text-cream">{formatPrice(o.total_amount)}</span>
-            <span className="block text-[11px] font-extrabold uppercase tracking-[0.12em] text-gold">{t("adminOrders.collectCod")}</span>
+            {o.payment_method === "partial" && (
+              <span className="block text-[11px] font-extrabold uppercase tracking-[0.12em] text-cream/70">
+                {t("adminOrders.advanceOnline")} {formatPrice(o.advance_amount)}
+              </span>
+            )}
+            <span className="block text-[11px] font-extrabold uppercase tracking-[0.12em] text-gold">
+              {t("adminOrders.collectCod")} {formatPrice(o.cod_amount)}
+            </span>
           </span>
           <OrderStatusBadge status={o.status} />
         </div>
@@ -105,13 +114,51 @@ function OrderCard({ o, onChange, focused }: { o: ShopOrderOut; onChange: Moved;
         </p>
       )}
 
+      {(o.status === "pending_payment" || o.status === "payment_submitted") && (
+        <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-line pt-6">
+          <div className="mr-auto text-sm">
+            <p className={o.status === "payment_submitted" ? "text-gold" : "text-cream/65"}>
+              {t(o.status === "payment_submitted" ? "adminOrders.customerSaysPaid" : "adminOrders.awaitingAdvance")
+                .replace("{amount}", formatPrice(o.advance_amount))}
+            </p>
+            {o.payment_reference && <p className="mt-1 text-cream/75">{t("pay.reference")}: <span className="font-mono">{o.payment_reference}</span></p>}
+          </div>
+          <button type="button" disabled={busy}
+            onClick={async () => {
+              if (!confirm(t("adminOrders.confirmReceived").replace("{amount}", formatPrice(o.advance_amount)))) return;
+              setBusy(true);
+              try {
+                await markOrderPaymentReceived(o.id);
+                onChange(o.id, "confirmed");
+              } catch (e) {
+                setError(e instanceof Error ? e.message : String(e));
+              } finally {
+                setBusy(false);
+              }
+            }}
+            className={`${BTN} bg-white text-ink hover:bg-gold`}>
+            <Sparkle className="h-3 w-3 text-gold-deep" />
+            {t("admin.paymentReceived")}
+          </button>
+        </div>
+      )}
+
       {next.length > 0 && (
         <div className="mt-6 border-t border-line pt-6">
           {next.includes("shipped") && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <input className={INPUT} value={courier} onChange={(e) => setCourier(e.target.value)} maxLength={80} placeholder={t("adminOrders.courierPh")} />
-              <input className={INPUT} value={tracking} onChange={(e) => setTracking(e.target.value)} maxLength={80} placeholder={t("adminOrders.trackingPh")} />
-            </div>
+            <>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-cream/65">{t("adminOrders.courierLabel")}</span>
+                  <input className={INPUT} value={courier} onChange={(e) => setCourier(e.target.value)} maxLength={80} placeholder={t("adminOrders.courierPh")} />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-cream/65">{t("adminOrders.trackingLabel")}</span>
+                  <input className={INPUT} value={tracking} onChange={(e) => setTracking(e.target.value)} maxLength={80} placeholder={t("adminOrders.trackingPh")} />
+                </label>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-cream/55">{t("adminOrders.trackingHint")}</p>
+            </>
           )}
           <input className={`${INPUT} mt-3`} value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} placeholder={t("adminOrders.notePh")} />
           <div className="mt-4 flex flex-wrap gap-3">
@@ -165,7 +212,7 @@ export default function AdminOrdersPage() {
   }, [all]);
 
   // Until the admin picks a tab, open where work is waiting.
-  const tab: Tab = picked ?? (["placed", "confirmed", "shipped"] as Tab[]).find((k) => counts[k] > 0) ?? "placed";
+  const tab: Tab = picked ?? (["payment_submitted", "placed", "confirmed", "shipped", "pending_payment"] as Tab[]).find((k) => counts[k] > 0) ?? "placed";
 
   // After a status change, follow the order to its new tab.
   const moved = useCallback<Moved>((id, status) => {

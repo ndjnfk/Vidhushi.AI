@@ -9,6 +9,8 @@ from app.models.models import (
     CallSignal,
     ChatMessage,
     HomeContent,
+    BookingPhoto,
+    TarotContent,
     SiteImage,
     Revision,
     SiteSettings,
@@ -54,7 +56,7 @@ async def _test_db():
             User, Kundli, PaymentSettings, Order, Vendor,
             PoojaService, PoojaBooking, RitualService, RitualBooking, RitualCharge,
             ConsultationBooking, ConsultationMessage, TarotReading, BlogPost,
-            Product, ShopOrder, ConsultationRequest, CallSignal, ChatMessage, UpiSettings, ProductImage, ContactMessage, SiteSettings, HomeContent, SiteImage, Revision,
+            Product, ShopOrder, ConsultationRequest, CallSignal, ChatMessage, UpiSettings, ProductImage, ContactMessage, SiteSettings, HomeContent, BookingPhoto, TarotContent, SiteImage, Revision,
         ],
     )
     yield

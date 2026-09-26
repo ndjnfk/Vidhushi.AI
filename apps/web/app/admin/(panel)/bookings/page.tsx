@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import PhotoGallery from "@/components/booking/PhotoGallery";
 import StatusBadge from "@/components/booking/StatusBadge";
 import Sparkle from "@/components/Sparkle";
-import { formatSlot, parseUtc, type BookingStatus, type ConsultationRequestOut } from "@/lib/bookings";
+import { formatDob, formatSlot, parseUtc, type BookingKind, type BookingStatus, type Channel, type ConsultationRequestOut } from "@/lib/bookings";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { formatPrice } from "@/lib/shop";
+import { useTarotContent } from "@/lib/useTarotContent";
 import { approveBooking, completeBooking, listBookings, markPaymentReceived, rejectBooking } from "../../_lib/api";
 import StatusTabs, { MovedNotice } from "../../_components/StatusTabs";
 
@@ -25,7 +27,28 @@ function ApproveForm({ row, onDone }: { row: ConsultationRequestOut; onDone: Mov
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState(String(row.duration_minutes ?? 30));
-  const [amount, setAmount] = useState(row.amount != null ? String(row.amount) : "");
+  const { sessions } = useTarotContent();
+  // Fee break-up; amounts kept as strings while typing. The total is their sum.
+  const [fees, setFees] = useState<{ label: string; amount: string }[]>(() => {
+    if (row.fee_items.length) return row.fee_items.map((f) => ({ label: f.label, amount: String(f.amount) }));
+    const price = sessions.find((s) => s.id === row.session_id)?.price;
+    const session = row.amount ?? price;
+    if (row.kind === "ritual") {
+      return [
+        { label: t("fee.ritual"), amount: row.amount != null ? String(row.amount) : "" },
+        { label: t("fee.platform"), amount: "0" },
+      ];
+    }
+    return [
+      { label: t("fee.session"), amount: session != null ? String(session) : "" },
+      { label: t("fee.platform"), amount: "0" },
+    ];
+  });
+  const total = fees.reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+  // Rituals: Vidushi Ji picks how the client can reach her once confirmed.
+  const [channels, setChannels] = useState<Channel[]>(row.channels.length ? row.channels : ["chat"]);
+  const setFee = (i: number, patch: Partial<{ label: string; amount: string }>) =>
+    setFees((cur) => cur.map((f, j) => (j === i ? { ...f, ...patch } : f)));
   const [note, setNote] = useState(row.admin_note);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +61,9 @@ function ApproveForm({ row, onDone }: { row: ConsultationRequestOut; onDone: Mov
       // The admin enters her local time; the API stores UTC.
       const scheduled = new Date(`${date}T${time}`);
       await approveBooking(row.id, {
-        scheduled_at: scheduled.toISOString(), duration_minutes: Number(duration), amount: Number(amount), note,
+        scheduled_at: scheduled.toISOString(), duration_minutes: Number(duration), note,
+        fee_items: fees.map((f) => ({ label: f.label.trim(), amount: Number(f.amount) || 0 })),
+        ...(row.kind === "ritual" ? { channels } : {}),
       });
       onDone(row.id, "approved");
     } catch (err) {
@@ -63,23 +88,71 @@ function ApproveForm({ row, onDone }: { row: ConsultationRequestOut; onDone: Mov
   return (
     <form onSubmit={approve} className="mt-6 grid gap-4 border-t border-line pt-6 sm:grid-cols-2 lg:grid-cols-4">
       <label className="flex flex-col gap-1.5">
-        <span className={LABEL}>{t("admin.date")}</span>
+        <span className={LABEL}>{t(row.kind === "ritual" ? "admin.ritualDate" : "admin.date")}</span>
         <input type="date" className={INPUT} value={date} onChange={(e) => setDate(e.target.value)} required />
       </label>
       <label className="flex flex-col gap-1.5">
         <span className={LABEL}>{t("admin.time")}</span>
         <input type="time" className={INPUT} value={time} onChange={(e) => setTime(e.target.value)} required />
       </label>
-      <label className="flex flex-col gap-1.5">
-        <span className={LABEL}>{t("booking.duration")}</span>
-        <select className={`${INPUT} bg-ink`} value={duration} onChange={(e) => setDuration(e.target.value)}>
-          {[15, 30, 45, 60, 90, 120].map((m) => <option key={m} value={m}>{m} {t("booking.minutes")}</option>)}
-        </select>
-      </label>
-      <label className="flex flex-col gap-1.5">
-        <span className={LABEL}>{t("booking.fee")} (₹)</span>
-        <input type="number" min={0} step={1} className={INPUT} value={amount} onChange={(e) => setAmount(e.target.value)} required />
-      </label>
+      {row.kind === "ritual" ? (
+        <div aria-hidden="true" className="hidden lg:block" />
+      ) : (
+        <label className="flex flex-col gap-1.5">
+          <span className={LABEL}>{t("booking.duration")}</span>
+          <select className={`${INPUT} bg-ink`} value={duration} onChange={(e) => setDuration(e.target.value)}>
+            {[15, 30, 45, 60, 90, 120].map((m) => <option key={m} value={m}>{m} {t("booking.minutes")}</option>)}
+          </select>
+        </label>
+      )}
+      <div className="flex flex-col justify-end gap-1.5">
+        <span className={LABEL}>{t("fee.total")}</span>
+        <p className="border border-gold/50 bg-gold/10 px-3 py-2.5 font-display text-xl text-gold">{formatPrice(total)}</p>
+      </div>
+      <fieldset className="flex flex-col gap-2 sm:col-span-2 lg:col-span-4">
+        <legend className={`${LABEL} mb-1.5`}>{t("fee.breakUp")}</legend>
+        {fees.map((f, i) => (
+          <div key={i} className="grid grid-cols-[1fr_140px_auto] gap-2">
+            <input className={INPUT} value={f.label} maxLength={60} required aria-label={t("fee.item")} placeholder={t("fee.item")}
+              onChange={(e) => setFee(i, { label: e.target.value })} />
+            <input type="number" min={0} step={1} className={INPUT} value={f.amount} required aria-label={`${f.label} (₹)`} placeholder="₹"
+              onChange={(e) => setFee(i, { amount: e.target.value })} />
+            <button type="button" disabled={fees.length === 1} onClick={() => setFees((cur) => cur.filter((_, j) => j !== i))}
+              aria-label={t("adminSite.remove")} title={t("adminSite.remove")}
+              className="flex w-11 items-center justify-center border border-line text-cream/60 hover:border-red-400 hover:text-red-300 disabled:opacity-30">
+              ✕
+            </button>
+          </div>
+        ))}
+        {fees.length < 8 && (
+          <button type="button" onClick={() => setFees((cur) => [...cur, { label: "", amount: "" }])}
+            className="self-start text-[12px] font-extrabold uppercase tracking-[0.14em] text-gold hover:underline">
+            + {t("fee.addLine")}
+          </button>
+        )}
+      </fieldset>
+      {row.kind === "ritual" && (
+        <fieldset className="flex flex-col gap-2 sm:col-span-2 lg:col-span-4">
+          <legend className={`${LABEL} mb-1.5`}>{t("adminTarot.channels")}</legend>
+          <div className="flex flex-wrap gap-2">
+            {(["chat", "audio", "video"] as const).map((ch) => {
+              const on = channels.includes(ch);
+              const only = on && channels.length === 1;
+              return (
+                <button key={ch} type="button" aria-pressed={on} disabled={only} title={only ? t("adminTarot.channelsMin") : undefined}
+                  onClick={() => setChannels((cur) => (["chat", "audio", "video"] as const).filter((c) => (c === ch ? !on : cur.includes(c))))}
+                  className={`flex items-center gap-2 border px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed ${
+                    on ? "border-gold bg-gold/15 text-gold" : "border-line text-cream/60 hover:border-cream/40"
+                  }`}>
+                  <span aria-hidden="true">{on ? "✓" : "+"}</span>
+                  {t(`adminTarot.channel.${ch}`)}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-cream/50">{t("admin.ritualChannelsHint")}</p>
+        </fieldset>
+      )}
       <label className="flex flex-col gap-1.5 sm:col-span-2 lg:col-span-4">
         <span className={LABEL}>{t("admin.noteToClient")}</span>
         <input className={INPUT} value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} />
@@ -121,6 +194,28 @@ function Row({ row, onChange, focused }: { row: ConsultationRequestOut; onChange
         <div><dt className="text-cream/55">{t("booking.email")}</dt><dd><a className="text-cream hover:text-gold" href={`mailto:${row.email}`}>{row.email}</a></dd></div>
         <div><dt className="text-cream/55">{t("booking.phone")}</dt><dd><a className="text-cream hover:text-gold" href={`tel:${row.phone}`}>{row.phone}</a></dd></div>
         <div><dt className="text-cream/55">{t("booking.place")}</dt><dd className="text-cream">{row.place}</dd></div>
+        {row.dob && <div><dt className="text-cream/55">{t("booking.dob")}</dt><dd className="text-cream">{formatDob(row.dob)}</dd></div>}
+        {row.photo_count > 0 && (
+          <div className="sm:col-span-3">
+            <dt className="mb-2 text-cream/55">{t("booking.photosLabel")}</dt>
+            <dd><PhotoGallery id={row.id} viewer="admin" name={row.name} /></dd>
+          </div>
+        )}
+        {row.kind === "ritual" && row.status !== "pending" && (
+          <div className="sm:col-span-3">
+            <dt className="text-cream/55">{t("booking.includes")}</dt>
+            <dd className="text-cream">{row.channels.map((c) => t(`adminTarot.channel.${c}`)).join(", ")}</dd>
+          </div>
+        )}
+        {row.session_id && (
+          <div className="sm:col-span-3">
+            <dt className="text-cream/55">{t("booking.includes")}</dt>
+            <dd className="text-cream">
+              {row.session_name && <span className="text-gold">{row.session_name} · </span>}
+              {row.channels.map((c) => t(`adminTarot.channel.${c}`)).join(", ")}
+            </dd>
+          </div>
+        )}
         {row.message && <div className="sm:col-span-3"><dt className="text-cream/55">{t("booking.message")}</dt><dd className="whitespace-pre-wrap text-cream">{row.message}</dd></div>}
         {row.scheduled_at && (
           <div className="sm:col-span-3">
@@ -172,16 +267,22 @@ function Row({ row, onChange, focused }: { row: ConsultationRequestOut; onChange
 
       {row.status === "confirmed" && (
         <div className="mt-6 flex flex-wrap gap-3 border-t border-line pt-6">
-          <Link href={`/admin/bookings/${row.id}/call?mode=video`} className={`${BTN} bg-white text-ink hover:bg-gold`}>
-            <Sparkle className="h-3 w-3 text-gold-deep" />
-            {t("booking.joinVideo")}
-          </Link>
-          <Link href={`/admin/bookings/${row.id}/call?mode=audio`} className={`${BTN} border border-cream/40 hover:border-gold hover:text-gold`}>
-            {t("booking.joinAudio")}
-          </Link>
-          <Link href={`/admin/chats?id=${row.id}`} className={`${BTN} border border-cream/40 hover:border-gold hover:text-gold`}>
-            {t("chat.title")}
-          </Link>
+          {row.channels.includes("video") && (
+            <Link href={`/admin/bookings/${row.id}/call?mode=video`} className={`${BTN} bg-white text-ink hover:bg-gold`}>
+              <Sparkle className="h-3 w-3 text-gold-deep" />
+              {t("booking.joinVideo")}
+            </Link>
+          )}
+          {row.channels.includes("audio") && (
+            <Link href={`/admin/bookings/${row.id}/call?mode=audio`} className={`${BTN} border border-cream/40 hover:border-gold hover:text-gold`}>
+              {t("booking.joinAudio")}
+            </Link>
+          )}
+          {row.channels.includes("chat") && (
+            <Link href={`/admin/chats?id=${row.id}`} className={`${BTN} border border-cream/40 hover:border-gold hover:text-gold`}>
+              {t("chat.title")}
+            </Link>
+          )}
           <button type="button" onClick={async () => { await completeBooking(row.id); onChange(row.id, "completed"); }}
             className={`${BTN} border border-line text-cream/75 hover:border-gold hover:text-gold`}>
             {t("admin.markCompleted")}
@@ -192,7 +293,9 @@ function Row({ row, onChange, focused }: { row: ConsultationRequestOut; onChange
   );
 }
 
-export default function AdminBookingsPage() {
+// Consultations and ritual requests share this page's flow (approve with a
+// fee break-up, UPI payment, chat); each kind has its own admin page.
+export function AdminBookings({ kind }: { kind: BookingKind }) {
   const { t } = useLanguage();
   const [picked, setPicked] = useState<Tab | null>(null);
   const [all, setAll] = useState<ConsultationRequestOut[] | null>(null);
@@ -204,8 +307,8 @@ export default function AdminBookingsPage() {
   // Everything is loaded once and filtered here, so tabs switch instantly
   // and each tab can show its count.
   const load = useCallback(() => {
-    listBookings().then(setAll).catch((e: Error) => setError(e.message));
-  }, []);
+    listBookings(kind).then(setAll).catch((e: Error) => setError(e.message));
+  }, [kind]);
 
   useEffect(() => {
     load();
@@ -242,7 +345,7 @@ export default function AdminBookingsPage() {
     <div className="px-5 py-10 md:px-12 md:py-14">
       <div className="mx-auto max-w-6xl">
         <p className="text-[13px] font-extrabold uppercase tracking-[0.16em] text-cream/70">{t("admin.panel")}</p>
-        <h1 className="mt-3 font-display text-[clamp(2.2rem,4vw,3.4rem)] uppercase tracking-[0.04em] text-gold">{t("admin.bookingsTitle")}</h1>
+        <h1 className="mt-3 font-display text-[clamp(2.2rem,4vw,3.4rem)] uppercase tracking-[0.04em] text-gold">{t(kind === "ritual" ? "admin.ritualsTitle" : "admin.bookingsTitle")}</h1>
 
         <StatusTabs
           active={tab}
@@ -268,4 +371,8 @@ export default function AdminBookingsPage() {
       </div>
     </div>
   );
+}
+
+export default function AdminBookingsPage() {
+  return <AdminBookings kind="consultation" />;
 }

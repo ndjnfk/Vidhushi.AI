@@ -5,12 +5,13 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import Planet from "@/components/Planet";
 import Sparkle from "@/components/Sparkle";
+import PhotoGallery from "@/components/booking/PhotoGallery";
 import StatusBadge from "@/components/booking/StatusBadge";
 import UpiPayModal from "@/components/booking/UpiPayModal";
 import Starfield from "@/components/Starfield";
 import { isLoggedIn } from "@/lib/auth";
 import {
-  cancelBooking, formatSlot, getBooking, parseUtc, type ConsultationRequestOut,
+  cancelBooking, formatDob, formatSlot, getBooking, parseUtc, type ConsultationRequestOut,
 } from "@/lib/bookings";
 import { formatPrice } from "@/lib/shop";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -71,6 +72,8 @@ export default function BookingPage() {
 
   const start = b?.scheduled_at ? parseUtc(b.scheduled_at) : null;
   const canJoin = !!start && now >= start.getTime() - OPENS_EARLY_MS;
+  // Only what the booked session includes (set per session in the admin panel).
+  const calls = (["video", "audio"] as const).filter((m) => b?.channels.includes(m));
 
   return (
     <div className="relative -mx-6 -my-8 min-h-[calc(100vh-97px)] overflow-hidden bg-ink font-body text-cream">
@@ -84,7 +87,7 @@ export default function BookingPage() {
           <Link href="/bookings" className="hover:text-gold">{t("nav.myBookings")}</Link>
         </p>
         <h1 className="mt-6 font-display text-[clamp(2.2rem,4.5vw,3.8rem)] uppercase leading-[1.05] tracking-[0.04em] text-gold">
-          {t("booking.pageTitle")}
+          {t(b?.kind === "ritual" ? "booking.ritualPageTitle" : "booking.pageTitle")}
         </h1>
 
         {!b ? (
@@ -110,10 +113,10 @@ export default function BookingPage() {
 
             {/* Schedule */}
             {["approved", "payment_submitted", "confirmed", "completed"].includes(b.status) && (
-              <dl className="mt-8 grid gap-px border border-line bg-line sm:grid-cols-3">
+              <dl className={`mt-8 grid gap-px border border-line bg-line ${b.kind === "ritual" ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
                 {[
-                  ["booking.when", formatSlot(b.scheduled_at)],
-                  ["booking.duration", b.duration_minutes ? `${b.duration_minutes} ${t("booking.minutes")}` : "—"],
+                  [b.kind === "ritual" ? "booking.ritualDate" : "booking.when", formatSlot(b.scheduled_at)],
+                  ...(b.kind === "ritual" ? [] : [["booking.duration", b.duration_minutes ? `${b.duration_minutes} ${t("booking.minutes")}` : "—"]]),
                   ["booking.fee", b.amount != null ? formatPrice(b.amount) : "—"],
                 ].map(([k, v]) => (
                   <div key={k} className="bg-ink px-5 py-4">
@@ -122,6 +125,23 @@ export default function BookingPage() {
                   </div>
                 ))}
               </dl>
+            )}
+            {b.fee_items.length > 0 && ["approved", "payment_submitted", "confirmed", "completed"].includes(b.status) && (
+              <div className="border-x border-b border-line px-5 py-4">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-cream/60">{t("fee.breakUp")}</p>
+                <ul className="mt-2 flex flex-col gap-1.5 text-sm">
+                  {b.fee_items.map((f, i) => (
+                    <li key={i} className="flex justify-between gap-4 text-cream/85">
+                      <span>{f.label}</span>
+                      <span>{formatPrice(f.amount)}</span>
+                    </li>
+                  ))}
+                  <li className="mt-1 flex justify-between gap-4 border-t border-line pt-2 font-bold text-gold">
+                    <span>{t("fee.total")}</span>
+                    <span>{b.amount != null ? formatPrice(b.amount) : "—"}</span>
+                  </li>
+                </ul>
+              </div>
             )}
 
             {/* Actions */}
@@ -143,17 +163,21 @@ export default function BookingPage() {
                     {t("chat.open")}
                   </Link>
                 </div>
-                <p className="mt-3 text-xs text-cream/55">{t("pay.callsUnlockNote")}</p>
+                {(b.channels.includes("audio") || b.channels.includes("video")) && (
+                  <p className="mt-3 text-xs text-cream/55">{t("pay.callsUnlockNote")}</p>
+                )}
               </div>
             )}
 
             {b.status === "confirmed" && (
               <div className="mt-8">
-                <p className="text-sm text-cream/70">
-                  {canJoin ? t("booking.roomOpen") : <>{start && <Countdown to={start} />} · {t("booking.roomOpensNote")}</>}
-                </p>
+                {calls.length > 0 && (
+                  <p className="text-sm text-cream/70">
+                    {canJoin ? t("booking.roomOpen") : <>{start && <Countdown to={start} />} · {t("booking.roomOpensNote")}</>}
+                  </p>
+                )}
                 <div className="mt-5 grid gap-4 sm:grid-cols-3">
-                  {(["video", "audio"] as const).map((m) =>
+                  {calls.map((m) =>
                     canJoin ? (
                       <Link key={m} href={`/bookings/${b.id}/call?mode=${m}`} className={m === "video" ? PRIMARY : SECONDARY}>
                         <Sparkle className={`h-3.5 w-3.5 ${m === "video" ? "text-gold-deep" : "text-gold"}`} />
@@ -165,16 +189,18 @@ export default function BookingPage() {
                       </span>
                     ),
                   )}
-                  <Link href={`/bookings/${b.id}/chat`} className={SECONDARY}>
-                    <Sparkle className="h-3.5 w-3.5 text-gold" />
-                    {t("chat.open")}
-                  </Link>
+                  {b.channels.includes("chat") && (
+                    <Link href={`/bookings/${b.id}/chat`} className={SECONDARY}>
+                      <Sparkle className="h-3.5 w-3.5 text-gold" />
+                      {t("chat.open")}
+                    </Link>
+                  )}
                 </div>
-                <p className="mt-3 text-xs text-cream/55">{t("chat.anytimeNote")}</p>
+                {b.channels.includes("chat") && <p className="mt-3 text-xs text-cream/55">{t("chat.anytimeNote")}</p>}
               </div>
             )}
 
-            {b.status === "completed" && (
+            {b.status === "completed" && b.channels.includes("chat") && (
               <Link href={`/bookings/${b.id}/chat`} className={`${SECONDARY} mt-8`}>
                 <Sparkle className="h-3.5 w-3.5 text-gold" />
                 {t("chat.history")}
@@ -189,10 +215,10 @@ export default function BookingPage() {
             {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
             {payOpen && (
               <UpiPayModal
-                bookingId={b.id}
+                id={b.id}
                 onClose={closePay}
-                onSubmitted={(updated) => {
-                  setB(updated);
+                onSubmitted={() => {
+                  load();
                   setPayOpen(false);
                 }}
               />
@@ -204,14 +230,21 @@ export default function BookingPage() {
               <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                 {[
                   ["booking.name", b.name], ["booking.email", b.email], ["booking.phone", b.phone], ["booking.place", b.place],
+                  ...(b.dob ? [["booking.dob", formatDob(b.dob)]] : []),
                   ["booking.topic", t(`booking.topic.${b.topic}`)], ["booking.message", b.message || "—"],
                 ].map(([k, v]) => (
-                  <div key={k}>
+                  <div key={k} className={k === "booking.message" ? "sm:col-span-2" : undefined}>
                     <dt className="text-cream/55">{t(k)}</dt>
-                    <dd className="text-cream">{v}</dd>
+                    <dd className="whitespace-pre-wrap text-cream">{v}</dd>
                   </div>
                 ))}
               </dl>
+              {b.photo_count > 0 && (
+                <div className="mt-5">
+                  <p className="mb-2 text-sm text-cream/55">{t("booking.photosLabel")}</p>
+                  <PhotoGallery id={b.id} viewer="client" name={b.name} />
+                </div>
+              )}
             </details>
           </section>
         )}

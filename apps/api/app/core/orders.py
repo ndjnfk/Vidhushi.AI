@@ -1,5 +1,10 @@
-"""Shop (bracelet) orders: Cash on Delivery only. Shared by the customer
-routes (app.api.routes.shop) and the admin routes (app.admin.routes.orders)."""
+"""Shop (bracelet) orders. Shared by the customer routes (app.api.routes.shop)
+and the admin routes (app.admin.routes.orders).
+
+Payment depends on the delivery pincode (see payment_plan): local orders are
+fully Cash on Delivery; elsewhere part is paid online by UPI first (the same
+QR / "I have paid" / "Payment received" flow as consultations) and the rest
+on delivery. The storefront only ever sees the resulting amounts."""
 import secrets
 from datetime import datetime
 
@@ -15,7 +20,23 @@ STATUS_LABEL = {
     "delivered": "Delivered",
     "cancelled": "Cancelled",
     "pending_payment": "Awaiting payment",
+    "payment_submitted": "Payment being verified",
 }
+
+# Payment policy — server-side only.
+COD_PINCODES = {"247001"}  # fully Cash on Delivery
+ADVANCE_PERCENT = 60  # elsewhere: this share online first, the rest on delivery
+
+
+def payment_plan(pincode: str, total: float) -> tuple[str, float, float]:
+    """(method, amount to pay online now, amount due on delivery)."""
+    digits = "".join(ch for ch in pincode if ch.isdigit())  # "247 001" counts too
+    if digits in COD_PINCODES:
+        return "cod", 0.0, total
+    advance = float(round(total * ADVANCE_PERCENT / 100))
+    return "partial", advance, round(total - advance, 2)
+
+
 _ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O/1/I
 
 
@@ -32,6 +53,9 @@ def order_out(o: ShopOrder) -> ShopOrderOut:
         shipping_address=ShippingAddressIn(**o.shipping_address.model_dump()),
         customer_email=o.customer_email, courier=o.courier, tracking_number=o.tracking_number,
         history=[OrderStatusEventOut(**h.model_dump()) for h in history], created_at=o.created_at,
+        advance_amount=o.advance_amount,
+        cod_amount=o.total_amount if o.cod_amount is None else o.cod_amount,
+        payment_reference=o.payment_reference,
     )
 
 

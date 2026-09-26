@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api";
+import type { UpiPaymentInfoOut } from "@/lib/bookings";
 
 export interface ProductOut {
   id: string;
@@ -29,7 +30,10 @@ export interface ShopOrderItemOut {
   unit_price: number;
 }
 
-export type OrderStatus = "placed" | "confirmed" | "shipped" | "delivered" | "cancelled" | "pending_payment";
+export type OrderStatus =
+  | "placed" | "confirmed" | "shipped" | "delivered" | "cancelled"
+  | "pending_payment" // waiting for the online advance
+  | "payment_submitted"; // customer says they paid; Vidushi Ji checks
 
 export interface OrderStatusEvent {
   status: OrderStatus;
@@ -50,6 +54,17 @@ export interface ShopOrderOut {
   tracking_number: string;
   history: OrderStatusEvent[];
   created_at: string;
+  advance_amount: number; // paid online first ("partial"); 0 for Cash on Delivery
+  cod_amount: number; // paid on delivery
+  payment_reference: string;
+}
+
+// How an order would be paid, decided by the server from the delivery address.
+export interface PaymentPlanOut {
+  method: "cod" | "partial";
+  total: number;
+  advance_amount: number;
+  cod_amount: number;
 }
 
 const INR = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
@@ -71,7 +86,12 @@ export function getProduct(id: string): Promise<ProductOut> {
   return apiFetch<ProductOut>(`/shop/products/${id}`);
 }
 
-// Cash on Delivery: places the order straight away.
+export function paymentPlan(items: { product_id: string; quantity: number }[], pincode: string): Promise<PaymentPlanOut> {
+  return apiFetch<PaymentPlanOut>("/shop/payment-plan", { method: "POST", body: JSON.stringify({ items, pincode }) });
+}
+
+// Places the order straight away (reserving stock). Some orders then need an
+// online advance by UPI before they ship — see the order page.
 export function checkout(
   items: { product_id: string; quantity: number }[],
   shippingAddress: ShippingAddressIn
@@ -85,3 +105,6 @@ export function checkout(
 export const myOrders = () => apiFetch<ShopOrderOut[]>("/shop/orders");
 export const getShopOrder = (id: string) => apiFetch<ShopOrderOut>(`/shop/orders/${id}`);
 export const cancelShopOrder = (id: string) => apiFetch<ShopOrderOut>(`/shop/orders/${id}/cancel`, { method: "POST" });
+export const getOrderPaymentInfo = (id: string) => apiFetch<UpiPaymentInfoOut>(`/shop/orders/${id}/payment-info`);
+export const submitOrderPayment = (id: string, reference: string) =>
+  apiFetch<ShopOrderOut>(`/shop/orders/${id}/payment-submitted`, { method: "POST", body: JSON.stringify({ reference }) });

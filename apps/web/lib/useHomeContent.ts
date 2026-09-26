@@ -37,4 +37,4 @@ export interface HomeContent {
 
 // Shared by the home and about sections; refreshes live when the admin
 // saves the Home page editor.
-export const useHomeContent = createLiveResource("home", () => apiFetch<HomeContent>("/site/home"));
+export const useHomeContent = createLiveResource("home", () => apiFetch<HomeContent>("/site/home"), "vidushiji_home_v1");

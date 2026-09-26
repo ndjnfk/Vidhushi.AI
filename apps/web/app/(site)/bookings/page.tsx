@@ -52,7 +52,9 @@ export default function MyBookingsPage() {
                 <Link href={`/bookings/${r.id}`}
                   className="flex flex-wrap items-center justify-between gap-4 border border-line bg-ink/85 px-6 py-5 transition-colors hover:border-gold/60">
                   <div>
-                    <p className="font-display text-xl uppercase tracking-[0.04em] text-gold">{t(`booking.topic.${r.topic}`)}</p>
+                    <p className="font-display text-xl uppercase tracking-[0.04em] text-gold">
+                      {r.kind === "ritual" ? t("booking.kindRitual") : r.session_name || t(`booking.topic.${r.topic}`)}
+                    </p>
                     <p className="mt-1 text-sm text-cream/65">
                       {r.scheduled_at ? formatSlot(r.scheduled_at) : `${t("booking.requestedOn")} ${formatSlot(r.created_at)}`}
                     </p>
