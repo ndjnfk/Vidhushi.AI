@@ -280,6 +280,12 @@ const mr: Record<string, string> = {
   "nav.rituals": "विधी",
   "nav.astrologers": "ज्योतिषी",
   "nav.shop": "दुकान",
+  "nav.pricing": "दर सूची",
+  "home.ratesSeeMore": "अधिक पहा",
+  "pricing.subtitle": "आमच्या सर्व सेवा आणि त्यांचे शुल्क. बुक करण्यासाठी कोणत्याही सेवेवर टॅप करा.",
+  "pricing.pages": "पाने",
+  "pricing.prev": "मागील पान",
+  "pricing.next": "पुढील पान",
   "nav.login": "लॉग इन करा",
   "nav.logout": "लॉग आउट करा",
 

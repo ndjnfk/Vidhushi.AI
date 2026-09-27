@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Sparkle from "@/components/Sparkle";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import {
@@ -11,14 +11,19 @@ import {
   type TarotContent,
   type TarotSessionItem,
 } from "@/lib/useTarotContent";
+import type { HomeSection } from "@/lib/useHomeContent";
 import { getTarotContent, saveTarotContent } from "../../_lib/api";
 import { BTN, INPUT, LABEL, ListEditor, Section, Text } from "../../_components/ContentEditor";
+import { SectionControls, useHomeLayout } from "../../_components/SectionLayout";
 
 const GROUPS: { value: SessionGroup; key: string }[] = [
   { value: "call", key: "adminTarot.groupCall" },
   { value: "reading", key: "adminTarot.groupReading" },
   { value: "area", key: "adminTarot.groupArea" },
 ];
+
+// The home page sections edited here; they can be hidden and reordered.
+const TAROT_SECTIONS: HomeSection[] = ["sessions", "areas", "modalities", "how"];
 
 const newId = () => `s-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -28,6 +33,7 @@ export default function AdminTarotPage() {
   const [c, setC] = useState<TarotContent | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const layout = useHomeLayout();
 
   useEffect(() => {
     getTarotContent().then(setC).catch((e: Error) => setMsg({ ok: false, text: e.message }));
@@ -40,12 +46,130 @@ export default function AdminTarotPage() {
     <Text label={label} value={c[k] as string} onChange={(v) => set({ [k]: v })} placeholder={d[k] as string} max={max} area={area} />
   );
 
+  const lay = (s: HomeSection) => ({
+    actions: <SectionControls section={s} within={TAROT_SECTIONS} ctl={layout} />,
+    muted: layout.layout?.hidden.includes(s) ?? false,
+  });
+
+  const editors: Record<string, React.ReactNode> = {
+    sessions: (
+      <Section title={t("adminTarot.sessions")} hint={t("adminTarot.sessionsHint")} {...lay("sessions")}>
+        {text("sessions_title", t("adminHome.heading"), 120)}
+        {text("sessions_subtitle", t("adminTarot.subtitle"), 300)}
+        <ListEditor<TarotSessionItem>
+          label={t("adminTarot.sessions")} items={c.sessions} defaults={d.sessions} max={30} addLabel={t("adminTarot.addSession")}
+          onChange={(sessions) => set({ sessions })}
+          blank={() => ({ id: newId(), group: "reading", name: "", description: "", price: null, tag: "", channels: [...CHANNELS] })}
+          render={(s, setS) => (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5">
+                <span className={LABEL}>{t("adminTarot.group")}</span>
+                <select className={`${INPUT} bg-ink`} value={s.group} onChange={(e) => setS({ ...s, group: e.target.value as SessionGroup })}>
+                  {GROUPS.map((g) => <option key={g.value} value={g.value}>{t(g.key)}</option>)}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className={LABEL}>{t("adminTarot.name")}</span>
+                <input className={INPUT} value={s.name} maxLength={80} required onChange={(e) => setS({ ...s, name: e.target.value })} />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className={LABEL}>{t("adminTarot.price")}</span>
+                <input type="number" min={0} max={10000000} className={INPUT} value={s.price ?? ""} placeholder={t("tarot.priceOnRequest")}
+                  onChange={(e) => setS({ ...s, price: e.target.value === "" ? null : Number(e.target.value) })} />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className={LABEL}>{t("adminTarot.tag")}</span>
+                <input className={INPUT} value={s.tag} maxLength={30} onChange={(e) => setS({ ...s, tag: e.target.value })} />
+              </label>
+              <fieldset className="flex flex-col gap-2 sm:col-span-2">
+                <legend className={`${LABEL} mb-1`}>{t("adminTarot.channels")}</legend>
+                <div className="flex flex-wrap gap-2">
+                  {CHANNELS.map((ch) => {
+                    const on = (s.channels ?? CHANNELS).includes(ch);
+                    const only = on && (s.channels ?? CHANNELS).length === 1;
+                    return (
+                      <button key={ch} type="button" aria-pressed={on} disabled={only} title={only ? t("adminTarot.channelsMin") : undefined}
+                        onClick={() => {
+                          const cur = s.channels ?? CHANNELS;
+                          setS({ ...s, channels: CHANNELS.filter((c) => (c === ch ? !on : cur.includes(c))) });
+                        }}
+                        className={`flex items-center gap-2 border px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed ${
+                          on ? "border-gold bg-gold/15 text-gold" : "border-line text-cream/60 hover:border-cream/40"
+                        }`}>
+                        <span aria-hidden="true">{on ? "✓" : "+"}</span>
+                        {t(`adminTarot.channel.${ch}`)}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-cream/50">{t("adminTarot.channelsHint")}</p>
+              </fieldset>
+              <label className="flex flex-col gap-1.5 sm:col-span-2">
+                <span className={LABEL}>{t("adminTarot.description")}</span>
+                <textarea className={`${INPUT} min-h-20 resize-y`} value={s.description} maxLength={500}
+                  onChange={(e) => setS({ ...s, description: e.target.value })} />
+              </label>
+            </div>
+          )}
+        />
+      </Section>
+    ),
+    areas: (
+      <Section title={t("adminTarot.areas")} hint={t("adminTarot.areasHint")} {...lay("areas")}>
+        {text("areas_title", t("adminHome.heading"), 120)}
+        {text("areas_subtitle", t("adminTarot.subtitle"), 300, true)}
+        {text("areas_note", t("adminTarot.note"), 500, true)}
+      </Section>
+    ),
+    modalities: (
+      <Section title={t("adminTarot.modalities")} {...lay("modalities")}>
+        {text("modalities_title", t("adminHome.heading"), 120)}
+        {text("modalities_intro", t("adminTarot.subtitle"), 500, true)}
+        <ListEditor
+          label={t("adminTarot.modalities")} items={c.modalities} defaults={d.modalities} max={12} addLabel={t("adminTarot.addModality")}
+          onChange={(modalities) => set({ modalities })} blank={() => ({ name: "", icon: "any" })}
+          render={(m, setM) => (
+            <div className="grid gap-3 sm:grid-cols-[1fr_200px]">
+              <input className={INPUT} value={m.name} maxLength={40} required placeholder={t("adminTarot.name")}
+                onChange={(e) => setM({ ...m, name: e.target.value })} />
+              <select className={`${INPUT} bg-ink`} value={m.icon} aria-label={t("adminTarot.icon")} onChange={(e) => setM({ ...m, icon: e.target.value })}>
+                {TAROT_ICONS.map((i) => <option key={i} value={i}>{t("adminTarot.icon")}: {i}</option>)}
+              </select>
+            </div>
+          )}
+        />
+        {text("modalities_note", t("adminTarot.note"), 800, true)}
+      </Section>
+    ),
+    how: (
+      <Section title={t("adminTarot.how")} {...lay("how")}>
+        {text("how_title", t("adminHome.heading"), 120)}
+        <ListEditor
+          label={t("adminTarot.how")} items={c.steps} defaults={d.steps} max={6} addLabel={t("adminTarot.addStep")}
+          onChange={(steps) => set({ steps })} blank={() => ({ title: "", body: "", items: [] })}
+          render={(s, setS) => (
+            <div className="flex flex-col gap-3">
+              <input className={INPUT} value={s.title} maxLength={120} required placeholder={t("adminTarot.stepTitle")}
+                onChange={(e) => setS({ ...s, title: e.target.value })} />
+              <textarea className={`${INPUT} min-h-16 resize-y`} value={s.body} maxLength={500} placeholder={t("adminTarot.stepBody")}
+                onChange={(e) => setS({ ...s, body: e.target.value })} />
+              <textarea className={`${INPUT} min-h-20 resize-y`} value={s.items.join("\n")} placeholder={t("adminTarot.stepItems")}
+                onChange={(e) => setS({ ...s, items: e.target.value.split("\n").slice(0, 10) })} />
+            </div>
+          )}
+        />
+        {text("how_note", t("adminTarot.note"), 500, true)}
+      </Section>
+    ),
+  };
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setMsg(null);
     try {
-      setC(await saveTarotContent(c!));
+      const [saved] = await Promise.all([saveTarotContent(c!), layout.save()]);
+      setC(saved);
       setMsg({ ok: true, text: t("adminTarot.saved") });
     } catch (err) {
       setMsg({ ok: false, text: err instanceof Error ? err.message : String(err) });
@@ -74,114 +198,10 @@ export default function AdminTarotPage() {
           />
         </Section>
 
-        {/* Sessions */}
-        <Section title={t("adminTarot.sessions")} hint={t("adminTarot.sessionsHint")}>
-          {text("sessions_title", t("adminHome.heading"), 120)}
-          {text("sessions_subtitle", t("adminTarot.subtitle"), 300)}
-          <ListEditor<TarotSessionItem>
-            label={t("adminTarot.sessions")} items={c.sessions} defaults={d.sessions} max={30} addLabel={t("adminTarot.addSession")}
-            onChange={(sessions) => set({ sessions })}
-            blank={() => ({ id: newId(), group: "reading", name: "", description: "", price: null, tag: "", channels: [...CHANNELS] })}
-            render={(s, setS) => (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="flex flex-col gap-1.5">
-                  <span className={LABEL}>{t("adminTarot.group")}</span>
-                  <select className={`${INPUT} bg-ink`} value={s.group} onChange={(e) => setS({ ...s, group: e.target.value as SessionGroup })}>
-                    {GROUPS.map((g) => <option key={g.value} value={g.value}>{t(g.key)}</option>)}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1.5">
-                  <span className={LABEL}>{t("adminTarot.name")}</span>
-                  <input className={INPUT} value={s.name} maxLength={80} required onChange={(e) => setS({ ...s, name: e.target.value })} />
-                </label>
-                <label className="flex flex-col gap-1.5">
-                  <span className={LABEL}>{t("adminTarot.price")}</span>
-                  <input type="number" min={0} max={10000000} className={INPUT} value={s.price ?? ""} placeholder={t("tarot.priceOnRequest")}
-                    onChange={(e) => setS({ ...s, price: e.target.value === "" ? null : Number(e.target.value) })} />
-                </label>
-                <label className="flex flex-col gap-1.5">
-                  <span className={LABEL}>{t("adminTarot.tag")}</span>
-                  <input className={INPUT} value={s.tag} maxLength={30} onChange={(e) => setS({ ...s, tag: e.target.value })} />
-                </label>
-                <fieldset className="flex flex-col gap-2 sm:col-span-2">
-                  <legend className={`${LABEL} mb-1`}>{t("adminTarot.channels")}</legend>
-                  <div className="flex flex-wrap gap-2">
-                    {CHANNELS.map((ch) => {
-                      const on = (s.channels ?? CHANNELS).includes(ch);
-                      const only = on && (s.channels ?? CHANNELS).length === 1;
-                      return (
-                        <button key={ch} type="button" aria-pressed={on} disabled={only} title={only ? t("adminTarot.channelsMin") : undefined}
-                          onClick={() => {
-                            const cur = s.channels ?? CHANNELS;
-                            setS({ ...s, channels: CHANNELS.filter((c) => (c === ch ? !on : cur.includes(c))) });
-                          }}
-                          className={`flex items-center gap-2 border px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed ${
-                            on ? "border-gold bg-gold/15 text-gold" : "border-line text-cream/60 hover:border-cream/40"
-                          }`}>
-                          <span aria-hidden="true">{on ? "✓" : "+"}</span>
-                          {t(`adminTarot.channel.${ch}`)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-xs text-cream/50">{t("adminTarot.channelsHint")}</p>
-                </fieldset>
-                <label className="flex flex-col gap-1.5 sm:col-span-2">
-                  <span className={LABEL}>{t("adminTarot.description")}</span>
-                  <textarea className={`${INPUT} min-h-20 resize-y`} value={s.description} maxLength={500}
-                    onChange={(e) => setS({ ...s, description: e.target.value })} />
-                </label>
-              </div>
-            )}
-          />
-        </Section>
-
-        {/* Areas */}
-        <Section title={t("adminTarot.areas")} hint={t("adminTarot.areasHint")}>
-          {text("areas_title", t("adminHome.heading"), 120)}
-          {text("areas_subtitle", t("adminTarot.subtitle"), 300, true)}
-          {text("areas_note", t("adminTarot.note"), 500, true)}
-        </Section>
-
-        {/* Modalities */}
-        <Section title={t("adminTarot.modalities")}>
-          {text("modalities_title", t("adminHome.heading"), 120)}
-          {text("modalities_intro", t("adminTarot.subtitle"), 500, true)}
-          <ListEditor
-            label={t("adminTarot.modalities")} items={c.modalities} defaults={d.modalities} max={12} addLabel={t("adminTarot.addModality")}
-            onChange={(modalities) => set({ modalities })} blank={() => ({ name: "", icon: "any" })}
-            render={(m, setM) => (
-              <div className="grid gap-3 sm:grid-cols-[1fr_200px]">
-                <input className={INPUT} value={m.name} maxLength={40} required placeholder={t("adminTarot.name")}
-                  onChange={(e) => setM({ ...m, name: e.target.value })} />
-                <select className={`${INPUT} bg-ink`} value={m.icon} aria-label={t("adminTarot.icon")} onChange={(e) => setM({ ...m, icon: e.target.value })}>
-                  {TAROT_ICONS.map((i) => <option key={i} value={i}>{t("adminTarot.icon")}: {i}</option>)}
-                </select>
-              </div>
-            )}
-          />
-          {text("modalities_note", t("adminTarot.note"), 800, true)}
-        </Section>
-
-        {/* How to book */}
-        <Section title={t("adminTarot.how")}>
-          {text("how_title", t("adminHome.heading"), 120)}
-          <ListEditor
-            label={t("adminTarot.how")} items={c.steps} defaults={d.steps} max={6} addLabel={t("adminTarot.addStep")}
-            onChange={(steps) => set({ steps })} blank={() => ({ title: "", body: "", items: [] })}
-            render={(s, setS) => (
-              <div className="flex flex-col gap-3">
-                <input className={INPUT} value={s.title} maxLength={120} required placeholder={t("adminTarot.stepTitle")}
-                  onChange={(e) => setS({ ...s, title: e.target.value })} />
-                <textarea className={`${INPUT} min-h-16 resize-y`} value={s.body} maxLength={500} placeholder={t("adminTarot.stepBody")}
-                  onChange={(e) => setS({ ...s, body: e.target.value })} />
-                <textarea className={`${INPUT} min-h-20 resize-y`} value={s.items.join("\n")} placeholder={t("adminTarot.stepItems")}
-                  onChange={(e) => setS({ ...s, items: e.target.value.split("\n").slice(0, 10) })} />
-              </div>
-            )}
-          />
-          {text("how_note", t("adminTarot.note"), 500, true)}
-        </Section>
+        {/* Home page sections, in their order on the site */}
+        {(layout.layout?.order ?? TAROT_SECTIONS).filter((x) => TAROT_SECTIONS.includes(x)).map((x) => (
+          <Fragment key={x}>{editors[x]}</Fragment>
+        ))}
 
         <div className="sticky bottom-0 mt-8 flex flex-wrap items-center gap-4 border-t border-line bg-ink py-5">
           <button type="submit" disabled={busy} className={`${BTN} bg-white px-8 py-4 text-ink hover:bg-gold`}>

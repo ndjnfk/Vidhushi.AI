@@ -1,28 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Sparkle from "@/components/Sparkle";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import type { HomeContent, Testimonial } from "@/lib/useHomeContent";
+import { HOME_SECTIONS, type HomeContent, type HomeSection, type RateItem, type Testimonial } from "@/lib/useHomeContent";
+import { Section } from "../../_components/ContentEditor";
+import { SectionControls, useHomeLayout } from "../../_components/SectionLayout";
 import ImagePicker from "../../_components/ImagePicker";
 import { getHomeContent, saveHomeContent, uploadHomeImage } from "../../_lib/api";
 
 const INPUT = "w-full border border-line bg-transparent px-4 py-3 text-cream outline-none placeholder:text-cream/35 focus:border-gold";
 const LABEL = "text-[12px] font-extrabold uppercase tracking-[0.14em] text-cream/70";
 const BTN = "inline-flex items-center justify-center gap-2 px-5 py-3 text-[12px] font-extrabold uppercase tracking-[0.14em] transition-colors disabled:opacity-50";
-const CARD = "mt-8 border border-line bg-ink-soft/60 p-6 md:p-8";
 
 const newReviewSlot = () => `review-${Math.random().toString(36).slice(2, 10)}`;
 
-function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <section className={CARD}>
-      <h2 className="font-display text-2xl uppercase tracking-[0.04em] text-gold">{title}</h2>
-      {hint && <p className="mt-1 text-sm text-cream/55">{hint}</p>}
-      <div className="mt-6">{children}</div>
-    </section>
-  );
-}
+// The tarot sections are shown, hidden and reordered on the Tarot sessions page.
+const PAGE_SECTIONS = HOME_SECTIONS.filter((s) => !["sessions", "areas", "modalities", "how"].includes(s));
 
 function Text({ label, value, onChange, placeholder, area, max }: {
   label: string; value: string; onChange: (v: string) => void; placeholder: string; area?: boolean; max: number;
@@ -44,6 +38,7 @@ export default function AdminHomePage() {
   const [c, setC] = useState<HomeContent | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const layout = useHomeLayout();
 
   useEffect(() => {
     getHomeContent().then(setC).catch((e: Error) => setMsg({ ok: false, text: e.message }));
@@ -56,14 +51,151 @@ export default function AdminHomePage() {
     setC((cur) => cur && { ...cur, testimonials: cur.testimonials.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
   const setStat = (i: number, patch: Partial<HomeContent["stats"][number]>) =>
     setC((cur) => cur && { ...cur, stats: cur.stats.map((s, j) => (j === i ? { ...s, ...patch } : s)) });
+  const setRate = (i: number, patch: Partial<RateItem>) =>
+    setC((cur) => cur && { ...cur, rates: cur.rates.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
+  const moveRate = (i: number, d: -1 | 1) =>
+    setC((cur) => {
+      if (!cur || i + d < 0 || i + d >= cur.rates.length) return cur;
+      const rates = [...cur.rates];
+      [rates[i], rates[i + d]] = [rates[i + d], rates[i]];
+      return { ...cur, rates };
+    });
+  // Header controls + muted look for a home section's editor block.
+  const lay = (s: HomeSection) => ({
+    actions: <SectionControls section={s} within={PAGE_SECTIONS} ctl={layout} />,
+    muted: layout.layout?.hidden.includes(s) ?? false,
+  });
   const up = (slot: string) => async (dataUrl: string) => (await uploadHomeImage(slot, dataUrl)).url;
+
+  const editors: Partial<Record<HomeSection, React.ReactNode>> = {
+    hero: (
+      <Section title={t("adminHome.hero")} {...lay("hero")}>
+        <div className="grid gap-6 md:grid-cols-[200px_1fr]">
+          <div>
+            <p className={`${LABEL} mb-2`}>{t("adminProducts.photo")}</p>
+            <ImagePicker url={c.hero_image_url} fallback="/home/hero.jpg" upload={up("hero")} onChange={(u) => set({ hero_image_url: u })} />
+          </div>
+          <div className="flex flex-col gap-5">
+            <Text label={t("adminHome.heading")} value={c.hero_title} onChange={(v) => set({ hero_title: v })} placeholder={t("tarot.heroTitle")} max={200} />
+            <Text label={t("adminHome.text")} value={c.hero_text} onChange={(v) => set({ hero_text: v })} placeholder={t("tarot.heroIntro")} area max={1000} />
+          </div>
+        </div>
+      </Section>
+    ),
+    about: (
+      <Section title={t("adminHome.about")} {...lay("about")}>
+        <div className="grid gap-6 md:grid-cols-[1fr_1fr]">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className={`${LABEL} mb-2`}>{t("adminHome.leftPhoto")}</p>
+              <ImagePicker url={c.about_image1_url} upload={up("about1")} onChange={(u) => set({ about_image1_url: u })} />
+            </div>
+            <div>
+              <p className={`${LABEL} mb-2`}>{t("adminHome.rightPhoto")}</p>
+              <ImagePicker url={c.about_image2_url} fallback={c.hero_image_url ?? "/home/hero.jpg"} upload={up("about2")} onChange={(u) => set({ about_image2_url: u })} />
+            </div>
+          </div>
+          <div className="flex flex-col gap-5">
+            <Text label={t("adminHome.heading")} value={c.about_title} onChange={(v) => set({ about_title: v })} placeholder={t("about.title")} max={200} />
+            <Text label={t("adminHome.text")} value={c.about_text} onChange={(v) => set({ about_text: v })} placeholder={t("about.intro")} area max={2000} />
+            <label className="flex flex-col gap-2">
+              <span className={LABEL}>{t("about.yearsExperience")}</span>
+              <input type="number" min={0} max={100} className={`${INPUT} max-w-[140px]`} value={c.years_experience}
+                onChange={(e) => set({ years_experience: Number(e.target.value) })} required />
+            </label>
+          </div>
+        </div>
+      </Section>
+    ),
+    rates: (
+      <Section title={t("adminHome.rates")} {...lay("rates")} hint={t("adminHome.ratesHint")}>
+        <div className="flex flex-col gap-5">
+          <div className="grid gap-5 md:grid-cols-2">
+            <Text label={t("adminHome.heading")} value={c.rates_title} onChange={(v) => set({ rates_title: v })} placeholder={t("home.ratesTitle")} max={120} />
+            <Text label={t("adminHome.ratesSubtitle")} value={c.rates_subtitle} onChange={(v) => set({ rates_subtitle: v })} placeholder={t("adminHome.optional")} max={300} />
+          </div>
+          <div className="flex flex-col gap-3">
+            {c.rates.map((r, i) => (
+              <div key={i} className="grid gap-3 sm:grid-cols-[1fr_160px_auto] sm:items-center">
+                <input className={INPUT} value={r.name} maxLength={80} required placeholder={t("adminHome.rateName")} aria-label={t("adminHome.rateName")}
+                  onChange={(e) => setRate(i, { name: e.target.value })} />
+                <input type="number" min={0} className={INPUT} value={r.price ?? ""} placeholder={t("tarot.priceOnRequest")} aria-label={t("adminHome.ratePrice")}
+                  onChange={(e) => setRate(i, { price: e.target.value === "" ? null : Number(e.target.value) })} />
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => moveRate(i, -1)} disabled={i === 0} aria-label="Move up"
+                    className={`${BTN} border border-line px-3 text-cream/60 hover:border-gold hover:text-gold`}>↑</button>
+                  <button type="button" onClick={() => moveRate(i, 1)} disabled={i === c.rates.length - 1} aria-label="Move down"
+                    className={`${BTN} border border-line px-3 text-cream/60 hover:border-gold hover:text-gold`}>↓</button>
+                  <button type="button" onClick={() => set({ rates: c.rates.filter((_, j) => j !== i) })}
+                    className={`${BTN} border border-line text-cream/60 hover:border-red-400 hover:text-red-300`}>{t("adminSite.remove")}</button>
+                </div>
+              </div>
+            ))}
+            {c.rates.length < 40 && (
+              <button type="button" onClick={() => set({ rates: [...c.rates, { name: "", price: c.rates.at(-1)?.price ?? null }] })}
+                className={`${BTN} self-start border border-cream/40 hover:border-gold hover:text-gold`}>+ {t("adminHome.addRate")}</button>
+            )}
+          </div>
+        </div>
+      </Section>
+    ),
+    stats: (
+      <Section title={t("adminHome.stats")} {...lay("stats")} hint={t("adminHome.statsHint")}>
+        <div className="flex flex-col gap-3">
+          {c.stats.map((s, i) => (
+            <div key={i} className="grid gap-3 sm:grid-cols-[140px_70px_1fr_auto] sm:items-center">
+              <input type="number" min={0} className={INPUT} value={s.value} aria-label="Number" onChange={(e) => setStat(i, { value: Number(e.target.value) })} required />
+              <input className={INPUT} value={s.suffix} aria-label="Suffix" maxLength={4} onChange={(e) => setStat(i, { suffix: e.target.value })} placeholder="+" />
+              <input className={INPUT} value={s.label} aria-label="Label" maxLength={60} onChange={(e) => setStat(i, { label: e.target.value })} required placeholder="Happy Customers" />
+              <button type="button" onClick={() => set({ stats: c.stats.filter((_, j) => j !== i) })}
+                className={`${BTN} border border-line text-cream/60 hover:border-red-400 hover:text-red-300`}>{t("adminSite.remove")}</button>
+            </div>
+          ))}
+          {c.stats.length < 4 && (
+            <button type="button" onClick={() => set({ stats: [...c.stats, { label: "", value: 0, suffix: "+" }] })}
+              className={`${BTN} self-start border border-cream/40 hover:border-gold hover:text-gold`}>+ {t("adminHome.addStat")}</button>
+          )}
+        </div>
+      </Section>
+    ),
+    reviews: (
+      <Section title={t("adminHome.reviews")} {...lay("reviews")} hint={t("adminHome.reviewsHint")}>
+        <div className="flex flex-col gap-5">
+          {c.testimonials.map((r, i) => (
+            <div key={i} className="grid gap-5 border border-line p-5 sm:grid-cols-[110px_1fr]">
+              <div>
+                <ImagePicker url={r.photo_url} upload={up(newReviewSlot())} onChange={(u) => setReview(i, { photo_url: u })} aspect="aspect-square" round />
+              </div>
+              <div className="flex flex-col gap-3">
+                <textarea className={`${INPUT} min-h-20 resize-y`} value={r.quote} maxLength={1000} required placeholder={t("adminHome.quote")}
+                  onChange={(e) => setReview(i, { quote: e.target.value })} />
+                <div className="grid gap-3 sm:grid-cols-[1fr_1fr_120px]">
+                  <input className={INPUT} value={r.name} maxLength={80} required placeholder={t("booking.name")} onChange={(e) => setReview(i, { name: e.target.value })} />
+                  <input className={INPUT} value={r.detail} maxLength={80} placeholder={t("adminHome.detailPh")} onChange={(e) => setReview(i, { detail: e.target.value })} />
+                  <select className={`${INPUT} bg-ink`} value={r.rating} aria-label="Rating" onChange={(e) => setReview(i, { rating: Number(e.target.value) })}>
+                    {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{"★".repeat(n)}</option>)}
+                  </select>
+                </div>
+                <button type="button" onClick={() => set({ testimonials: c.testimonials.filter((_, j) => j !== i) })}
+                  className={`${BTN} self-start border border-line text-cream/60 hover:border-red-400 hover:text-red-300`}>{t("adminSite.remove")}</button>
+              </div>
+            </div>
+          ))}
+          <button type="button" disabled={c.testimonials.length >= 20}
+            onClick={() => set({ testimonials: [...c.testimonials, { quote: "", name: "", detail: "", rating: 5, photo_url: null }] })}
+            className={`${BTN} self-start border border-cream/40 hover:border-gold hover:text-gold`}>+ {t("adminHome.addReview")}</button>
+        </div>
+      </Section>
+    ),
+  };
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setMsg(null);
     try {
-      setC(await saveHomeContent(c!));
+      const [saved] = await Promise.all([saveHomeContent(c!), layout.save()]);
+      setC(saved);
       setMsg({ ok: true, text: t("adminHome.saved") });
     } catch (err) {
       setMsg({ ok: false, text: err instanceof Error ? err.message : String(err) });
@@ -79,44 +211,10 @@ export default function AdminHomePage() {
         <h1 className="mt-3 font-display text-[clamp(2.2rem,4vw,3.4rem)] uppercase tracking-[0.04em] text-gold">{t("adminHome.title")}</h1>
         <p className="mt-3 max-w-2xl text-cream/70">{t("adminHome.intro")}</p>
 
-        {/* Hero */}
-        <Section title={t("adminHome.hero")}>
-          <div className="grid gap-6 md:grid-cols-[200px_1fr]">
-            <div>
-              <p className={`${LABEL} mb-2`}>{t("adminProducts.photo")}</p>
-              <ImagePicker url={c.hero_image_url} fallback="/home/hero.jpg" upload={up("hero")} onChange={(u) => set({ hero_image_url: u })} />
-            </div>
-            <div className="flex flex-col gap-5">
-              <Text label={t("adminHome.heading")} value={c.hero_title} onChange={(v) => set({ hero_title: v })} placeholder={t("tarot.heroTitle")} max={200} />
-              <Text label={t("adminHome.text")} value={c.hero_text} onChange={(v) => set({ hero_text: v })} placeholder={t("tarot.heroIntro")} area max={1000} />
-            </div>
-          </div>
-        </Section>
-
-        {/* About */}
-        <Section title={t("adminHome.about")}>
-          <div className="grid gap-6 md:grid-cols-[1fr_1fr]">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className={`${LABEL} mb-2`}>{t("adminHome.leftPhoto")}</p>
-                <ImagePicker url={c.about_image1_url} upload={up("about1")} onChange={(u) => set({ about_image1_url: u })} />
-              </div>
-              <div>
-                <p className={`${LABEL} mb-2`}>{t("adminHome.rightPhoto")}</p>
-                <ImagePicker url={c.about_image2_url} fallback={c.hero_image_url ?? "/home/hero.jpg"} upload={up("about2")} onChange={(u) => set({ about_image2_url: u })} />
-              </div>
-            </div>
-            <div className="flex flex-col gap-5">
-              <Text label={t("adminHome.heading")} value={c.about_title} onChange={(v) => set({ about_title: v })} placeholder={t("about.title")} max={200} />
-              <Text label={t("adminHome.text")} value={c.about_text} onChange={(v) => set({ about_text: v })} placeholder={t("about.intro")} area max={2000} />
-              <label className="flex flex-col gap-2">
-                <span className={LABEL}>{t("about.yearsExperience")}</span>
-                <input type="number" min={0} max={100} className={`${INPUT} max-w-[140px]`} value={c.years_experience}
-                  onChange={(e) => set({ years_experience: Number(e.target.value) })} required />
-              </label>
-            </div>
-          </div>
-        </Section>
+        {/* Home page sections, in their order on the site */}
+        {(layout.layout?.order ?? HOME_SECTIONS).filter((s) => PAGE_SECTIONS.includes(s)).map((s) => (
+          <Fragment key={s}>{editors[s] ?? <Section title={t(`adminHome.sec.${s}`)} {...lay(s)} />}</Fragment>
+        ))}
 
         {/* About page */}
         <Section title={t("adminHome.aboutPage")} hint={t("adminHome.aboutPageHint")}>
@@ -155,54 +253,6 @@ export default function AdminHomePage() {
                 </div>
               )}
             </div>
-          </div>
-        </Section>
-
-        {/* Stats */}
-        <Section title={t("adminHome.stats")} hint={t("adminHome.statsHint")}>
-          <div className="flex flex-col gap-3">
-            {c.stats.map((s, i) => (
-              <div key={i} className="grid gap-3 sm:grid-cols-[140px_70px_1fr_auto] sm:items-center">
-                <input type="number" min={0} className={INPUT} value={s.value} aria-label="Number" onChange={(e) => setStat(i, { value: Number(e.target.value) })} required />
-                <input className={INPUT} value={s.suffix} aria-label="Suffix" maxLength={4} onChange={(e) => setStat(i, { suffix: e.target.value })} placeholder="+" />
-                <input className={INPUT} value={s.label} aria-label="Label" maxLength={60} onChange={(e) => setStat(i, { label: e.target.value })} required placeholder="Happy Customers" />
-                <button type="button" onClick={() => set({ stats: c.stats.filter((_, j) => j !== i) })}
-                  className={`${BTN} border border-line text-cream/60 hover:border-red-400 hover:text-red-300`}>{t("adminSite.remove")}</button>
-              </div>
-            ))}
-            {c.stats.length < 4 && (
-              <button type="button" onClick={() => set({ stats: [...c.stats, { label: "", value: 0, suffix: "+" }] })}
-                className={`${BTN} self-start border border-cream/40 hover:border-gold hover:text-gold`}>+ {t("adminHome.addStat")}</button>
-            )}
-          </div>
-        </Section>
-
-        {/* Testimonials */}
-        <Section title={t("adminHome.reviews")} hint={t("adminHome.reviewsHint")}>
-          <div className="flex flex-col gap-5">
-            {c.testimonials.map((r, i) => (
-              <div key={i} className="grid gap-5 border border-line p-5 sm:grid-cols-[110px_1fr]">
-                <div>
-                  <ImagePicker url={r.photo_url} upload={up(newReviewSlot())} onChange={(u) => setReview(i, { photo_url: u })} aspect="aspect-square" round />
-                </div>
-                <div className="flex flex-col gap-3">
-                  <textarea className={`${INPUT} min-h-20 resize-y`} value={r.quote} maxLength={1000} required placeholder={t("adminHome.quote")}
-                    onChange={(e) => setReview(i, { quote: e.target.value })} />
-                  <div className="grid gap-3 sm:grid-cols-[1fr_1fr_120px]">
-                    <input className={INPUT} value={r.name} maxLength={80} required placeholder={t("booking.name")} onChange={(e) => setReview(i, { name: e.target.value })} />
-                    <input className={INPUT} value={r.detail} maxLength={80} placeholder={t("adminHome.detailPh")} onChange={(e) => setReview(i, { detail: e.target.value })} />
-                    <select className={`${INPUT} bg-ink`} value={r.rating} aria-label="Rating" onChange={(e) => setReview(i, { rating: Number(e.target.value) })}>
-                      {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{"★".repeat(n)}</option>)}
-                    </select>
-                  </div>
-                  <button type="button" onClick={() => set({ testimonials: c.testimonials.filter((_, j) => j !== i) })}
-                    className={`${BTN} self-start border border-line text-cream/60 hover:border-red-400 hover:text-red-300`}>{t("adminSite.remove")}</button>
-                </div>
-              </div>
-            ))}
-            <button type="button" disabled={c.testimonials.length >= 20}
-              onClick={() => set({ testimonials: [...c.testimonials, { quote: "", name: "", detail: "", rating: 5, photo_url: null }] })}
-              className={`${BTN} self-start border border-cream/40 hover:border-gold hover:text-gold`}>+ {t("adminHome.addReview")}</button>
           </div>
         </Section>
 

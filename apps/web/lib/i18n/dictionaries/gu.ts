@@ -280,6 +280,12 @@ const gu: Record<string, string> = {
   "nav.rituals": "વિધિઓ",
   "nav.astrologers": "જ્યોતિષીઓ",
   "nav.shop": "દુકાન",
+  "nav.pricing": "કિંમતો",
+  "home.ratesSeeMore": "વધુ જુઓ",
+  "pricing.subtitle": "અમારી બધી સેવાઓ અને તેના શુલ્ક. બુક કરવા કોઈપણ સેવા પર ટેપ કરો.",
+  "pricing.pages": "પાનાં",
+  "pricing.prev": "પાછલું પાનું",
+  "pricing.next": "આગલું પાનું",
   "nav.login": "લૉગ ઇન કરો",
   "nav.logout": "લૉગ આઉટ કરો",
 

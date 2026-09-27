@@ -4,15 +4,20 @@ from datetime import date, datetime, time
 
 from app.astro import chart as chart_mod
 from app.astro import dasha as dasha_mod
+from app.astro import doshas as doshas_mod
 from app.astro import ephemeris
 from app.astro import panchang as panchang_mod
 from app.astro.geotime import resolve_timezone, to_utc
 from app.astro.chart import Chart
+from app.astro.constants import RASHIS
 from app.schemas.schemas import (
     AntardashaOut,
+    AvakhadaOut,
     ChartOut,
+    DoshasOut,
     MahadashaOut,
     PanchangOut,
+    PeriodOut,
     PlanetOut,
 )
 
@@ -32,6 +37,7 @@ def chart_to_schema(c: Chart) -> ChartOut:
                 pada=p.pada,
                 house=p.house,
                 is_retrograde=p.is_retrograde,
+                dignity=doshas_mod.dignity(p.planet, p.sign_index),
             )
             for p in c.planets
         ],
@@ -52,14 +58,41 @@ def dasha_to_schema(periods) -> list[MahadashaOut]:
     ]
 
 
+def doshas_to_schema(d: doshas_mod.Doshas) -> DoshasOut:
+    return DoshasOut(
+        manglik_from_lagna=d.manglik_from_lagna,
+        manglik_from_moon=d.manglik_from_moon,
+        manglik_from_venus=d.manglik_from_venus,
+        mars_house=d.mars_house,
+        mars_house_from_moon=d.mars_house_from_moon,
+        manglik_cancellations=d.manglik_cancellations,
+        manglik_severity=d.manglik_severity,
+        seventh_aspected_by=d.seventh_aspected_by,
+        kaal_sarp=d.kaal_sarp,
+        kaal_sarp_type=d.kaal_sarp_type,
+        sade_sati=d.sade_sati,
+        saturn_transit_sign=RASHIS[d.saturn_transit_sign_index],
+        dhaiya=d.dhaiya,
+        sade_sati_periods=[PeriodOut(start=p.start, end=p.end) for p in d.sade_sati_periods],
+        pitra=d.pitra,
+        pitra_reasons=d.pitra_reasons,
+    )
+
+
+def avakhada_to_schema(a: doshas_mod.Avakhada) -> AvakhadaOut:
+    return AvakhadaOut(**vars(a))
+
+
 class GeneratedKundli:
-    def __init__(self, timezone: str, jd_ut: float, d1: Chart, d9: Chart, dasha, panchang):
+    def __init__(self, timezone: str, jd_ut: float, d1: Chart, d9: Chart, dasha, panchang, doshas, avakhada):
         self.timezone = timezone
         self.jd_ut = jd_ut
         self.d1 = d1
         self.d9 = d9
         self.dasha = dasha
         self.panchang = panchang
+        self.doshas = doshas
+        self.avakhada = avakhada
 
 
 def generate_kundli(
@@ -81,4 +114,6 @@ def generate_kundli(
 
     return GeneratedKundli(
         timezone=tz_name, jd_ut=jd_ut, d1=d1, d9=d9, dasha=dasha_periods, panchang=panchang,
+        doshas=doshas_mod.compute_doshas(d1, birth=birth_utc),
+        avakhada=doshas_mod.compute_avakhada(d1),
     )

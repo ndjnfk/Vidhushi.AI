@@ -110,6 +110,8 @@ export const saveSiteSettings = (body: SiteSettings) =>
 export const getHomeContent = () => adminFetch<HomeContent>("/admin/home");
 export const saveHomeContent = (body: HomeContent) =>
   adminFetch<HomeContent>("/admin/home", { method: "PUT", body: JSON.stringify(body) });
+export const saveHomeLayout = (body: Pick<HomeContent, "hidden_sections" | "section_order">) =>
+  adminFetch<HomeContent>("/admin/home/layout", { method: "PUT", body: JSON.stringify(body) });
 export const getTarotContent = () => adminFetch<TarotContent>("/admin/tarot");
 export const saveTarotContent = (body: TarotContent) =>
   adminFetch<TarotContent>("/admin/tarot", { method: "PUT", body: JSON.stringify(body) });

@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import ChartCard from "@/components/chart/ChartCard";
-import DashaTimeline from "@/components/DashaTimeline";
-import PanchangCard from "@/components/PanchangCard";
+import KundliReport from "@/components/kundli/report/KundliReport";
 import Planet from "@/components/Planet";
 import Sparkle from "@/components/Sparkle";
 import Starfield from "@/components/Starfield";
@@ -61,14 +59,7 @@ export default function KundliView({ kundli }: { kundli: KundliOut }) {
       </header>
 
       <div className="flex flex-col gap-8 px-6 py-14 md:px-16 lg:px-[6%]">
-        <div className="grid gap-8 lg:grid-cols-2">
-          <ChartCard title={t("kundli.rashiChart")} chart={kundli.d1_chart} />
-          <ChartCard title={t("kundli.navamsaChart")} chart={kundli.d9_chart} />
-        </div>
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,420px)_1fr]">
-          <PanchangCard panchang={kundli.panchang} />
-          <DashaTimeline dasha={kundli.dasha} />
-        </div>
+        <KundliReport kundli={kundli} />
         <div className="flex justify-center pt-6">
           <Link
             href="/kundli"

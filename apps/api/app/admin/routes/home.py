@@ -9,8 +9,8 @@ from app.core.live import HOME, bump
 from app.api.routes.home import get_home_content, home_out
 from app.core.config import get_settings
 from app.core.upi import decode_image_upload
-from app.models.models import HomeStat, SiteImage, Testimonial, ValueCard
-from app.schemas.schemas import HomeContentIn, HomeContentOut, ImageUploadIn
+from app.models.models import HomeStat, RateItem, SiteImage, Testimonial, ValueCard
+from app.schemas.schemas import HomeContentIn, HomeContentOut, HomeLayoutIn, ImageUploadIn
 
 router = APIRouter(prefix="/admin/home", tags=["admin"], dependencies=[Depends(get_current_admin)])
 
@@ -50,6 +50,22 @@ async def update_home(payload: HomeContentIn):
     ]
     h.story_title, h.story_text = payload.story_title.strip(), payload.story_text.strip()
     h.values = [ValueCard(title=v.title.strip(), body=v.body.strip()) for v in payload.values]
+    h.rates_title, h.rates_subtitle = payload.rates_title.strip(), payload.rates_subtitle.strip()
+    h.rates = [RateItem(name=r.name.strip(), price=r.price) for r in payload.rates]
+    h.updated_at = datetime.utcnow()
+    if h.id:
+        await h.save()
+    else:
+        await h.insert()
+    await bump(HOME)
+    return home_out(h)
+
+
+@router.put("/layout", response_model=HomeContentOut)
+async def update_layout(payload: HomeLayoutIn):
+    """Show/hide and reorder the home page sections."""
+    h = await get_home_content()
+    h.hidden_sections, h.section_order = payload.hidden_sections, payload.section_order
     h.updated_at = datetime.utcnow()
     if h.id:
         await h.save()

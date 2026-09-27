@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from app.admin.routes import home as admin_home
 from app.api.routes import home
-from app.schemas.schemas import HomeContentIn, HomeStatIn, ImageUploadIn, TestimonialIn, ValueCardIn
+from app.schemas.schemas import HomeContentIn, HomeLayoutIn, HomeStatIn, ImageUploadIn, RateItemIn, TestimonialIn, ValueCardIn
 
 PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
 
@@ -49,3 +49,32 @@ async def test_about_page_story_and_values():
     ))
     assert saved.story_title == "My journey" and saved.values[0].title == "Trust"
 
+
+
+async def test_rate_list():
+    d = await home.public_home()
+    assert d.rates_title == "" and len(d.rates) == 10 and d.rates[0].price == 2222
+    saved = await admin_home.update_home(HomeContentIn(
+        rates_title=" Candle Spells ", rates=[RateItemIn(name=" Visa Success ", price=3100), RateItemIn(name="Custom")],
+    ))
+    assert saved.rates_title == "Candle Spells" and saved.rates[0].name == "Visa Success"
+    pub = await home.public_home()
+    assert [r.price for r in pub.rates] == [3100, None]
+    with pytest.raises(ValueError):
+        RateItemIn(name="x", price=-1)
+
+
+
+async def test_layout_hide_and_reorder():
+    d = await home.public_home()
+    assert d.hidden_sections == [] and d.section_order == []
+    saved = await admin_home.update_layout(HomeLayoutIn(hidden_sections=["stats", "rates", "stats"],
+                                                        section_order=["reviews", "hero"]))
+    assert saved.hidden_sections == ["stats", "rates"]
+    assert saved.section_order[:3] == ["reviews", "hero", "about"] and len(saved.section_order) == 10
+    # Saving the content keeps the layout.
+    await admin_home.update_home(HomeContentIn(hero_title="Hi"))
+    pub = await home.public_home()
+    assert pub.hidden_sections == ["stats", "rates"] and pub.section_order[0] == "reviews"
+    with pytest.raises(ValueError):
+        HomeLayoutIn(hidden_sections=["nope"])

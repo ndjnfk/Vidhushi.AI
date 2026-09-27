@@ -22,6 +22,7 @@ class PlanetOut(BaseModel):
     pada: int
     house: int
     is_retrograde: bool
+    dignity: str = ""  # "exalted" | "debilitated" | "own" | ""
 
 
 class ChartOut(BaseModel):
@@ -55,6 +56,41 @@ class PanchangOut(BaseModel):
     sunset_utc: datetime
 
 
+class PeriodOut(BaseModel):
+    start: datetime
+    end: datetime
+
+
+class DoshasOut(BaseModel):
+    manglik_from_lagna: bool
+    manglik_from_moon: bool
+    manglik_from_venus: bool
+    mars_house: int
+    mars_house_from_moon: int
+    manglik_cancellations: list[str]  # rule codes, see app/astro/doshas.py
+    manglik_severity: str  # "none" | "cancelled" | "mild" | "strong"
+    seventh_aspected_by: list[str]
+    kaal_sarp: bool
+    kaal_sarp_type: str
+    sade_sati: str  # "none" | "rising" | "peak" | "setting"
+    saturn_transit_sign: str
+    dhaiya: str  # "" | "fourth" | "eighth"
+    sade_sati_periods: list[PeriodOut]
+    pitra: bool
+    pitra_reasons: list[str]
+
+
+class AvakhadaOut(BaseModel):
+    varna: str
+    vashya: str
+    yoni: str
+    gana: str
+    nadi: str
+    tatva: str
+    moon_sign_lord: str
+    sun_sign: str
+
+
 class KundliOut(BaseModel):
     id: str
     name: str
@@ -66,6 +102,8 @@ class KundliOut(BaseModel):
     d9_chart: ChartOut
     dasha: list[MahadashaOut]
     panchang: PanchangOut
+    doshas: DoshasOut
+    avakhada: AvakhadaOut
 
 
 class GunaMilanIn(BaseModel):
@@ -776,6 +814,15 @@ class ValueCardIn(BaseModel):
     body: str = Field(min_length=1, max_length=500)
 
 
+class RateItemIn(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    price: int | None = Field(default=None, ge=0, le=10_000_000)
+
+
+# Built-in order of the home page sections.
+HOME_SECTIONS = ["hero", "about", "rates", "sessions", "areas", "modalities", "how", "bracelets", "stats", "reviews"]
+
+
 class HomeContentIn(BaseModel):
     hero_title: str = Field(default="", max_length=200)
     hero_text: str = Field(default="", max_length=1000)
@@ -790,10 +837,33 @@ class HomeContentIn(BaseModel):
     story_title: str = Field(default="", max_length=200)
     story_text: str = Field(default="", max_length=5000)
     values: list[ValueCardIn] = Field(default_factory=list, max_length=6)
+    rates_title: str = Field(default="", max_length=120)
+    rates_subtitle: str = Field(default="", max_length=300)
+    rates: list[RateItemIn] = Field(default_factory=list, max_length=40)
+
+
+class HomeLayoutIn(BaseModel):
+    """Which home sections are hidden, and their order. Saved separately from
+    the content so the Home and Tarot editors can both change it."""
+    hidden_sections: list[str] = Field(default_factory=list, max_length=len(HOME_SECTIONS))
+    section_order: list[str] = Field(default_factory=list, max_length=len(HOME_SECTIONS))
+
+    @field_validator("hidden_sections", "section_order")
+    @classmethod
+    def _known_sections(cls, v: list[str]) -> list[str]:
+        if not set(v) <= set(HOME_SECTIONS):
+            raise ValueError(f"unknown section; allowed: {HOME_SECTIONS}")
+        return list(dict.fromkeys(v))  # drop duplicates, keep order
+
+    @field_validator("section_order")
+    @classmethod
+    def _complete_order(cls, v: list[str]) -> list[str]:
+        return v + [s for s in HOME_SECTIONS if s not in v]
 
 
 class HomeContentOut(HomeContentIn):
-    pass
+    hidden_sections: list[str] = Field(default_factory=list)
+    section_order: list[str] = Field(default_factory=list)
 
 
 TAROT_ICONS = "tarot|runes|oracle|dice|cartomancy|palmistry|numerology|any|love|career|health"

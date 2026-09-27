@@ -193,3 +193,14 @@ async def test_admin_picks_how_a_ritual_client_can_reach_her(monkeypatch):
     assert s.channels == ["chat", "audio", "video"]
     with pytest.raises(ValueError):
         ConsultationApproveIn(scheduled_at=start, duration_minutes=60, amount=1, channels=[])
+
+
+async def test_rate_list_service_booking():
+    client = User(email="rate@example.com", hashed_password="x")
+    await client.insert()
+    base = dict(name="Asha", email="asha@example.com", phone="9876543210", place="Delhi", topic="other",
+                message="Q", photos=[PHOTO], dob="1995-03-12")
+    b = await bookings.create_request(ConsultationRequestIn(session_id="rate-1", **base), user=client)
+    assert b.session_name == "Legal Matters"  # the built-in list's 2nd item
+    with pytest.raises(HTTPException):
+        await bookings.create_request(ConsultationRequestIn(session_id="rate-99", **base), user=client)

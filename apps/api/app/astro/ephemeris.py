@@ -67,6 +67,12 @@ def planet_positions(jd_ut: float) -> dict[str, PlanetPosition]:
     return positions
 
 
+def planet_longitude(jd_ut: float, name: str) -> float:
+    """Sidereal longitude of one planet (Sun..Rahu) — cheaper than planet_positions()."""
+    (lon, *_rest), _flag = swe.calc_ut(jd_ut, _SWE_PLANET_ID[name], _SIDEREAL_FLAG)
+    return lon % 360.0
+
+
 def ascendant_longitude(jd_ut: float, lat: float, lon: float) -> float:
     """Sidereal longitude of the Lagna (ascendant) for the given moment/place."""
     _cusps, ascmc = swe.houses_ex(jd_ut, lat, lon, b"W", flags=swe.FLG_SIDEREAL)

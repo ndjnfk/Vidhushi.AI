@@ -23,6 +23,7 @@ const PRIMARY_NAV = [
   { href: "/kundli", key: "nav.kundli" },
   { href: "/matching", key: "nav.matching" },
   { href: "/rituals", key: "nav.rituals" },
+  { href: "/pricing", key: "nav.pricing" },
   { href: "/shop", key: "nav.shop" },
 ];
 

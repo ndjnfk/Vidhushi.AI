@@ -280,6 +280,12 @@ const pa: Record<string, string> = {
   "nav.rituals": "ਰਸਮਾਂ",
   "nav.astrologers": "ਜੋਤਿਸ਼ੀ",
   "nav.shop": "ਦੁਕਾਨ",
+  "nav.pricing": "ਕੀਮਤਾਂ",
+  "home.ratesSeeMore": "ਹੋਰ ਵੇਖੋ",
+  "pricing.subtitle": "ਸਾਡੀਆਂ ਸਾਰੀਆਂ ਸੇਵਾਵਾਂ ਅਤੇ ਉਨ੍ਹਾਂ ਦੇ ਖਰਚੇ। ਬੁੱਕ ਕਰਨ ਲਈ ਕਿਸੇ ਵੀ ਸੇਵਾ 'ਤੇ ਟੈਪ ਕਰੋ।",
+  "pricing.pages": "ਪੰਨੇ",
+  "pricing.prev": "ਪਿਛਲਾ ਪੰਨਾ",
+  "pricing.next": "ਅਗਲਾ ਪੰਨਾ",
   "nav.login": "ਲਾਗ ਇਨ ਕਰੋ",
   "nav.logout": "ਲਾਗ ਆਊਟ ਕਰੋ",
 

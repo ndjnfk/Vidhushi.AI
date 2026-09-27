@@ -21,12 +21,21 @@ function move<T>(list: T[], i: number, by: number): T[] {
   return next;
 }
 
-export function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+// `actions` sits at the right of the title (e.g. show/hide + move buttons);
+// `muted` dims the section when it is hidden on the site.
+export function Section({ title, hint, children, actions, muted }: {
+  title: string; hint?: string; children?: React.ReactNode; actions?: React.ReactNode; muted?: boolean;
+}) {
   return (
-    <section className="mt-8 border border-line bg-ink-soft/60 p-6 md:p-8">
-      <h2 className="font-display text-2xl uppercase tracking-[0.04em] text-gold">{title}</h2>
-      {hint && <p className="mt-1 text-sm text-cream/55">{hint}</p>}
-      <div className="mt-6 flex flex-col gap-5">{children}</div>
+    <section className={`mt-8 border p-6 transition-colors md:p-8 ${muted ? "border-dashed border-line bg-transparent" : "border-line bg-ink-soft/60"}`}>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className={muted ? "opacity-45" : ""}>
+          <h2 className="font-display text-2xl uppercase tracking-[0.04em] text-gold">{title}</h2>
+          {hint && <p className="mt-1 text-sm text-cream/55">{hint}</p>}
+        </div>
+        {actions}
+      </div>
+      {children && <div className={`mt-6 flex flex-col gap-5 ${muted ? "opacity-45" : ""}`}>{children}</div>}
     </section>
   );
 }

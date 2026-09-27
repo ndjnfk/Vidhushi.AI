@@ -26,6 +26,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
     links: [
       { href: "/", key: "nav.home" },
       { href: "/about", key: "nav.about" },
+      { href: "/pricing", key: "nav.pricing" },
       { href: "/shop", key: "nav.shop" },
       { href: "/reviews", key: "nav.reviews" },
       { href: "/contact", key: "nav.contact" },

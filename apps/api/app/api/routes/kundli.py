@@ -2,7 +2,7 @@ from datetime import time as time_cls
 
 from fastapi import APIRouter, HTTPException
 
-from app.astro.service import chart_to_schema, dasha_to_schema, generate_kundli
+from app.astro.service import avakhada_to_schema, chart_to_schema, dasha_to_schema, doshas_to_schema, generate_kundli
 from app.models.models import Kundli
 from app.schemas.schemas import BirthDetailsIn, KundliOut, PanchangOut
 
@@ -35,6 +35,8 @@ async def generate(payload: BirthDetailsIn):
         d9_chart=chart_to_schema(result.d9),
         dasha=dasha_to_schema(result.dasha),
         panchang=PanchangOut(**vars(result.panchang)),
+        doshas=doshas_to_schema(result.doshas),
+        avakhada=avakhada_to_schema(result.avakhada),
     )
 
 
@@ -58,4 +60,6 @@ async def get_kundli(kundli_id: str):
         d9_chart=chart_to_schema(result.d9),
         dasha=dasha_to_schema(result.dasha),
         panchang=PanchangOut(**vars(result.panchang)),
+        doshas=doshas_to_schema(result.doshas),
+        avakhada=avakhada_to_schema(result.avakhada),
     )

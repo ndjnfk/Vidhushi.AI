@@ -21,6 +21,7 @@ export interface PlanetOut {
   pada: number;
   house: number;
   is_retrograde: boolean;
+  dignity: "exalted" | "debilitated" | "own" | "";
 }
 
 export interface ChartOut {
@@ -54,6 +55,39 @@ export interface PanchangOut {
   sunset_utc: string;
 }
 
+export type ManglikCancellation = "mars_strong_sign" | "house_sign" | "jupiter_with_mars" | "jupiter_aspects_mars" | "benefic_in_lagna";
+export type PitraReason = "sun_rahu" | "sun_ketu" | "sun_saturn" | "rahu_9th";
+
+export interface DoshasOut {
+  manglik_from_lagna: boolean;
+  manglik_from_moon: boolean;
+  manglik_from_venus: boolean;
+  mars_house: number;
+  mars_house_from_moon: number;
+  manglik_cancellations: ManglikCancellation[];
+  manglik_severity: "none" | "cancelled" | "mild" | "strong";
+  seventh_aspected_by: string[];
+  kaal_sarp: boolean;
+  kaal_sarp_type: string;
+  sade_sati: "none" | "rising" | "peak" | "setting";
+  saturn_transit_sign: string;
+  dhaiya: "" | "fourth" | "eighth";
+  sade_sati_periods: { start: string; end: string }[];
+  pitra: boolean;
+  pitra_reasons: PitraReason[];
+}
+
+export interface AvakhadaOut {
+  varna: string;
+  vashya: string;
+  yoni: string;
+  gana: string;
+  nadi: string;
+  tatva: string;
+  moon_sign_lord: string;
+  sun_sign: string;
+}
+
 export interface KundliOut {
   id: string;
   name: string;
@@ -65,6 +99,8 @@ export interface KundliOut {
   d9_chart: ChartOut;
   dasha: MahadashaOut[];
   panchang: PanchangOut;
+  doshas: DoshasOut;
+  avakhada: AvakhadaOut;
 }
 
 export interface KootaOut {

@@ -20,7 +20,7 @@ from app.core.deps import get_current_user
 from app.core.email import send_email
 from app.core.notify import notify_admins
 from app.core.upi import decode_image_upload, get_upi_settings, qr_data_url, upi_uri
-from app.models.models import CHANNELS, BookingPhoto, CallSignal, ConsultationRequest, TarotContent, User
+from app.models.models import CHANNELS, BookingPhoto, CallSignal, ConsultationRequest, HomeContent, TarotContent, User
 from app.schemas.schemas import (
     FeeItemIn,
     CallInfoOut,
@@ -132,6 +132,9 @@ def _require_owner(r: ConsultationRequest, user: User) -> None:
 
 # ---------------------------------------------------------------- client
 
+RATE_PREFIX = "rate-"
+
+
 @router.post("", response_model=ConsultationRequestOut)
 async def create_request(payload: ConsultationRequestIn, user: User = Depends(get_current_user)):
     if payload.kind == "ritual" or payload.session_id:  # tarot sessions and rituals
@@ -144,6 +147,14 @@ async def create_request(payload: ConsultationRequestIn, user: User = Depends(ge
     if r.kind == "ritual":
         # A ritual has no call: chat is for updates. Session fields don't apply.
         r.session_id, r.channels = "", ["chat"]
+    elif r.session_id.startswith(RATE_PREFIX):
+        # A service from the home page rate list ("rate-<position>").
+        home = await HomeContent.find_one()
+        rates = home.rates if home else HomeContent().rates
+        i = r.session_id.removeprefix(RATE_PREFIX)
+        if not i.isdigit() or int(i) >= len(rates):
+            raise HTTPException(status_code=422, detail="This service is no longer offered — please pick another")
+        r.session_name = rates[int(i)].name
     elif r.session_id:
         # Unknown ids are the site's built-in sessions: everything included.
         content = await TarotContent.find_one()

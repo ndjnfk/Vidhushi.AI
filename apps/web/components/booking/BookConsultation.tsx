@@ -11,6 +11,7 @@ import { createBooking, type ConsultationRequestOut, type Topic } from "@/lib/bo
 import en from "@/lib/i18n/dictionaries/en";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { formatInr } from "@/lib/offerings";
+import { useHomeContent } from "@/lib/useHomeContent";
 import { useRitualsContent } from "@/lib/useRitualsContent";
 import { useTarotContent, type TarotSessionItem } from "@/lib/useTarotContent";
 import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
@@ -50,7 +51,7 @@ function ritualTopic(i: string): Topic {
   return i === "love" ? "love" : i === "career" ? "career" : "other";
 }
 
-function sessionLabel(s: TarotSessionItem, t: (k: string) => string): string {
+function sessionLabel(s: Pick<TarotSessionItem, "name" | "price">, t: (k: string) => string): string {
   return `${s.name} — ${s.price === null ? t("tarot.priceOnRequest") : formatInr(s.price)}`;
 }
 
@@ -61,10 +62,16 @@ function today(): string {
 
 function BookingModal({ preset, onClose }: { preset: BookingPreset; onClose: () => void }) {
   const { t } = useLanguage();
-  // Sessions and modalities as edited in the admin panel (or the built-in ones).
-  const { sessions, modalities } = useTarotContent();
+  // The sessions offered are the services of the home page rate list
+  // (id "rate-<position>"), as the admin edits them. Only if that list is
+  // empty does the form fall back to the tarot sessions.
+  const { sessions } = useTarotContent();
+  const home = useHomeContent();
+  const rates = (home?.rates ?? []).map((r, i) => ({ id: `rate-${i}`, name: r.name, price: r.price }));
+  const useRates = rates.length > 0;
+  const options: { id: string; name: string; price: number | null }[] = useRates ? rates : sessions;
   const initialSession = preset.kind === "tarot"
-    ? (sessions.find((x) => x.id === preset.session) ?? sessions[0])?.id ?? ""
+    ? (options.find((x) => x.id === preset.session) ?? options[0])?.id ?? ""
     : "";
   // Ritual intentions as edited in the admin panel (or the built-in ones).
   const { intentions } = useRitualsContent();
@@ -75,7 +82,7 @@ function BookingModal({ preset, onClose }: { preset: BookingPreset; onClose: () 
     name: "", email: "", phone: "", place: "",
     topic: (preset.kind === "ritual" ? ritualTopic(initialIntention) : preset.kind === "tarot" ? sessionTopic(initialSession) : "career") as Topic,
     message: "",
-    session: initialSession, modality: modalities[0]?.name ?? "", dob: "", date: "", time: "",
+    session: initialSession, dob: "", date: "", time: "",
     intention: initialIntention, timeline: "",
   });
   const [photo, setPhoto] = useState<string | null>(null); // required for sessions and rituals
@@ -96,14 +103,13 @@ function BookingModal({ preset, onClose }: { preset: BookingPreset; onClose: () 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const session = sessions.find((x) => x.id === form.session);
+  const session = options.find((x) => x.id === form.session);
 
   function composeMessage(): string {
     const note = form.message.trim();
     if (preset.kind === "tarot") {
       const lines = [
         `Tarot session: ${session ? sessionLabel(session, (k) => en[k] ?? k) : form.session}`,
-        `Modality: ${form.modality || en["modality.any"]}`,
         `Preferred date & time: ${form.date} ${form.time}`.trim(),
       ];
       return `${lines.join("\n")}\n\n${note}`.trim();
@@ -186,13 +192,15 @@ function BookingModal({ preset, onClose }: { preset: BookingPreset; onClose: () 
                         const session = e.target.value;
                         setForm((f) => ({ ...f, session, topic: sessionTopic(session) }));
                       }}>
-                      {(["call", "reading", "area"] as const).map((g) => (
-                        <optgroup key={g} label={t(g === "call" ? "tarot.groupCall" : g === "reading" ? "tarot.groupReading" : "tarot.areasTitle")}>
-                          {sessions.filter((s) => s.group === g).map((s) => (
-                            <option key={s.id} value={s.id}>{sessionLabel(s, t)}</option>
-                          ))}
-                        </optgroup>
-                      ))}
+                      {useRates
+                        ? rates.map((r) => <option key={r.id} value={r.id}>{sessionLabel(r, t)}</option>)
+                        : (["call", "reading", "area"] as const).map((g) => (
+                          <optgroup key={g} label={t(g === "call" ? "tarot.groupCall" : g === "reading" ? "tarot.groupReading" : "tarot.areasTitle")}>
+                            {sessions.filter((s) => s.group === g).map((s) => (
+                              <option key={s.id} value={s.id}>{sessionLabel(s, t)}</option>
+                            ))}
+                          </optgroup>
+                        ))}
                     </select>
                   </label>
                   <label className="flex flex-col gap-2">
@@ -244,17 +252,6 @@ function BookingModal({ preset, onClose }: { preset: BookingPreset; onClose: () 
                 <input className={INPUT} value={form.place} onChange={set("place")} required maxLength={200}
                   placeholder={t("booking.placePlaceholder")} />
               </label>
-              {preset.kind === "tarot" && (
-                <label className="flex flex-col gap-2 sm:col-span-2">
-                  <span className={LABEL}>{t("booking.modality")}</span>
-                  <select className={SELECT} value={form.modality} onChange={set("modality")}>
-                    {modalities.map((m, i) => (
-                      <option key={`${m.name}-${i}`} value={m.name}>{m.name}</option>
-                    ))}
-                    <option value="">{t("modality.any")}</option>
-                  </select>
-                </label>
-              )}
               {preset.kind === "ritual" && (
                 <label className="flex flex-col gap-2 sm:col-span-2">
                   <span className={LABEL}>{t("booking.timeline")}</span>

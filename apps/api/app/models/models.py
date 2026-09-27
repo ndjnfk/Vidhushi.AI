@@ -512,6 +512,19 @@ class ValueCard(BaseModel):
     body: str
 
 
+class RateItem(BaseModel):
+    name: str
+    price: int | None = None  # None = "price on request"
+
+
+def _default_rates() -> list[RateItem]:
+    return [RateItem(name=n, price=2222) for n in (
+        "Resolving Love Matters", "Legal Matters", "Marriage Issues", "Securing Your Desired Job",
+        "Increasing Wealth & Finances", "Love Attraction", "Business Growth", "Health & Healing",
+        "Parental Approval for Marriage", "Visa Success",
+    )]
+
+
 class HomeContent(Document):
     """Single admin-editable row with the home page's editable content.
     Empty text fields mean "use the built-in (translated) default"."""
@@ -529,6 +542,14 @@ class HomeContent(Document):
     story_title: str = ""
     story_text: str = ""  # blank lines separate paragraphs
     values: list[ValueCard] = Field(default_factory=list)  # empty = the 3 built-in cards
+    # Home page rate list ("Candle Spell Services"). Empty title = built-in text.
+    rates_title: str = ""
+    rates_subtitle: str = ""
+    rates: list[RateItem] = Field(default_factory=_default_rates)
+    # Home page layout (keys: HOME_SECTIONS in schemas): sections switched off,
+    # and the display order (empty = the built-in order).
+    hidden_sections: list[str] = Field(default_factory=list)
+    section_order: list[str] = Field(default_factory=list)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:
