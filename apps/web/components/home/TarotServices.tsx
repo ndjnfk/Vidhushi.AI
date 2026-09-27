@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import BookConsultationButton from "@/components/booking/BookConsultation";
 import SectionHeading from "@/components/SectionHeading";
 import Sparkle from "@/components/Sparkle";
@@ -155,10 +154,6 @@ export default function TarotServices() {
               <Sparkle className="h-3.5 w-3.5 text-gold-deep" />
               {t("tarot.ctaBook")}
             </BookConsultationButton>
-            <Link href="/tarot" className={OUTLINE_BTN}>
-              <Sparkle className="h-3.5 w-3.5 text-gold" />
-              {t("tarot.freeTitle")}
-            </Link>
           </div>
         </div>
       </section>

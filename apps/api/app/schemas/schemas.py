@@ -86,9 +86,45 @@ class GunaMilanOut(BaseModel):
     max_points: int
 
 
+SECURITY_QUESTION = "^(first_pet|first_school|birth_city|mother_maiden|favourite_teacher|childhood_friend)$"
+
+
 class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
+    security_question: str = Field(pattern=SECURITY_QUESTION)
+    security_answer: str = Field(min_length=2, max_length=100)
+
+
+class ForgotQuestionIn(BaseModel):
+    email: EmailStr
+
+
+class ForgotQuestionOut(BaseModel):
+    security_question: str  # key; the site shows it translated
+
+
+class ForgotResetIn(BaseModel):
+    email: EmailStr
+    security_answer: str = Field(min_length=1, max_length=100)
+    new_password: str = Field(min_length=8)
+
+
+class AdminUserOut(BaseModel):
+    id: str
+    email: str
+    is_admin: bool
+    created_at: datetime
+    security_question: str  # "" if not set
+
+
+class AdminSetPasswordIn(BaseModel):
+    new_password: str = Field(min_length=8)
+
+
+class AdminSetSecurityIn(BaseModel):
+    security_question: str = Field(pattern=SECURITY_QUESTION)
+    security_answer: str = Field(min_length=2, max_length=100)
 
 
 class UserLogin(BaseModel):
@@ -849,3 +885,30 @@ class AdminReviewOut(ReviewOut):
 
 class ReviewHiddenIn(BaseModel):
     hidden: bool
+
+
+# ---- Rituals page (admin-editable) ----
+
+class RitualIntentionIn(BaseModel):
+    id: str = Field(pattern=r"^[a-z0-9-]{1,40}$")
+    name: str = Field(min_length=1, max_length=80)
+
+
+class RitualsContentIn(BaseModel):
+    hero_title: str = Field(default="", max_length=120)
+    hero_text: str = Field(default="", max_length=800)
+    charges_note: str = Field(default="", max_length=600)
+    hero_image_url: str | None = None
+    intentions_title: str = Field(default="", max_length=120)
+    intentions_subtitle: str = Field(default="", max_length=300)
+    intentions: list[RitualIntentionIn] = Field(default_factory=list, max_length=30)
+    urgent_title: str = Field(default="", max_length=120)
+    urgent_lead: str = Field(default="", max_length=300)
+    urgent_body: str = Field(default="", max_length=1000)
+    how_title: str = Field(default="", max_length=120)
+    how_intro: str = Field(default="", max_length=600)
+    steps: list[str] = Field(default_factory=list, max_length=8)
+
+
+class RitualsContentOut(RitualsContentIn):
+    pass

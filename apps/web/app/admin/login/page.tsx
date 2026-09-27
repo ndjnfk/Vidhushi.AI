@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import PasswordInput from "@/components/account/PasswordInput";
 import Sparkle from "@/components/Sparkle";
 import Starfield from "@/components/Starfield";
 import { adminLogin } from "../_lib/api";
@@ -51,7 +52,7 @@ export default function AdminLoginPage() {
         <form onSubmit={submit} className="mt-10 flex flex-col gap-4">
           <input type="email" autoComplete="username" placeholder="Admin email" className={INPUT}
             value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <input type="password" autoComplete="current-password" placeholder="Password" className={INPUT}
+          <PasswordInput autoComplete="current-password" placeholder="Password" className={INPUT}
             value={password} onChange={(e) => setPassword(e.target.value)} required />
           <button type="submit" disabled={busy}
             className="mt-3 flex items-center justify-center gap-3 bg-white px-7 py-5 text-[13px] font-extrabold uppercase tracking-[0.16em] text-ink transition-colors hover:bg-gold disabled:opacity-60">

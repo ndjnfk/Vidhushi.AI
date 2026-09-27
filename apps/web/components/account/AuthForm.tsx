@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import PasswordInput from "@/components/account/PasswordInput";
 import Planet from "@/components/Planet";
 import Sparkle from "@/components/Sparkle";
 import Starfield from "@/components/Starfield";
 import { login, register } from "@/lib/api";
 import { setToken } from "@/lib/auth";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { SECURITY_QUESTIONS } from "@/lib/securityQuestions";
 
 // Only same-site paths, so ?next= can't bounce users to another domain.
 function safeNext(): string {
@@ -17,11 +19,14 @@ function safeNext(): string {
 
 const INPUT =
   "w-full border border-line bg-transparent px-4 py-3.5 text-cream outline-none transition-colors placeholder:text-cream/45 focus:border-gold";
+const LABEL = "text-[12px] font-extrabold uppercase tracking-[0.14em] text-cream/75";
 
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [question, setQuestion] = useState<string>(SECURITY_QUESTIONS[0]);
+  const [answer, setAnswer] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [nextQuery, setNextQuery] = useState("");
@@ -42,7 +47,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
     setBusy(true);
     setError(null);
     try {
-      const res = mode === "login" ? await login(email, password) : await register(email, password);
+      const res = mode === "login" ? await login(email, password) : await register(email, password, question, answer);
       setToken(res.access_token);
       // Full navigation so the header re-reads the new login state.
       window.location.href = safeNext();
@@ -68,9 +73,22 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
         <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
           <input type="email" autoComplete="email" placeholder={t("account.emailPlaceholder")} className={INPUT}
             value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <input type="password" autoComplete={isLogin ? "current-password" : "new-password"}
+          <PasswordInput autoComplete={isLogin ? "current-password" : "new-password"}
             placeholder={t(isLogin ? "account.passwordPlaceholder" : "account.passwordMinPlaceholder")} className={INPUT}
             value={password} onChange={(e) => setPassword(e.target.value)} minLength={isLogin ? undefined : 8} required />
+          {isLogin ? (
+            <Link href="/account/forgot" className="self-end text-sm text-gold hover:underline">{t("account.forgotLink")}</Link>
+          ) : (
+            <div className="mt-2 flex flex-col gap-3 border-t border-line pt-5">
+              <span className={LABEL}>{t("account.securityQuestion")}</span>
+              <p className="-mt-1 text-sm text-cream/60">{t("account.securityHint")}</p>
+              <select className={`${INPUT} bg-ink [color-scheme:dark]`} value={question} onChange={(e) => setQuestion(e.target.value)}>
+                {SECURITY_QUESTIONS.map((q) => <option key={q} value={q}>{t(`security.q.${q}`)}</option>)}
+              </select>
+              <input className={INPUT} placeholder={t("account.securityAnswer")} value={answer} autoComplete="off"
+                onChange={(e) => setAnswer(e.target.value)} required minLength={2} maxLength={100} />
+            </div>
+          )}
           <button type="submit" disabled={busy}
             className="mt-3 flex items-center justify-center gap-3 bg-white px-7 py-5 text-[13px] font-extrabold uppercase tracking-[0.16em] text-ink transition-colors hover:bg-gold disabled:opacity-60">
             <Sparkle className="h-3.5 w-3.5 text-gold-deep" />

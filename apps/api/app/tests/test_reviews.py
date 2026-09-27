@@ -119,3 +119,14 @@ async def test_completed_via_admin_flow_can_be_reviewed(monkeypatch):
     r = await reviews.create_review(ReviewIn(target="booking", target_id=bid, rating=5, text="Thank you!"), user=asha)
     assert r.rating == 5
     assert (await bookings.get_request(bid, user=asha)).status == "completed"
+
+
+async def test_admin_can_delete_a_review():
+    asha = await _user()
+    bid = await _booking(asha)
+    r = await reviews.create_review(ReviewIn(target="booking", target_id=bid, rating=1, text="Spam spam"), user=asha)
+    assert (await admin_reviews.delete_review(r.id)) == {"deleted": True}
+    assert await admin_reviews.list_all() == [] and (await reviews.list_reviews(skip=0, limit=10)).total == 0
+    with pytest.raises(HTTPException) as e:
+        await admin_reviews.delete_review(r.id)
+    assert e.value.status_code == 404

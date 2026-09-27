@@ -1,3 +1,4 @@
+import { BookingHost } from "@/components/booking/BookConsultation";
 import CartDrawer from "@/components/shop/CartDrawer";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
@@ -11,6 +12,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <CartDrawer />
       <main className="flex-1 px-6 py-8">{children}</main>
       <SiteFooter />
+      <BookingHost />
     </>
   );
 }

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Response
 
-from app.models.models import HomeContent, SiteImage, TarotContent
-from app.schemas.schemas import HomeContentOut, TarotContentOut
+from app.models.models import HomeContent, RitualsContent, SiteImage, TarotContent
+from app.schemas.schemas import HomeContentOut, RitualsContentOut, TarotContentOut
 
 router = APIRouter(tags=["home"])
 
@@ -20,6 +20,20 @@ async def get_tarot_content() -> TarotContent:
 
 def tarot_out(c: TarotContent) -> TarotContentOut:
     return TarotContentOut(**c.model_dump(include=set(TarotContentOut.model_fields)))
+
+
+async def get_rituals_content() -> RitualsContent:
+    return await RitualsContent.find_one() or RitualsContent()
+
+
+def rituals_out(c: RitualsContent) -> RitualsContentOut:
+    return RitualsContentOut(**c.model_dump(include=set(RitualsContentOut.model_fields)))
+
+
+@router.get("/site/rituals", response_model=RitualsContentOut)
+async def public_rituals():
+    """Rituals page content. Empty fields = the site's built-in defaults."""
+    return rituals_out(await get_rituals_content())
 
 
 @router.get("/site/home", response_model=HomeContentOut)

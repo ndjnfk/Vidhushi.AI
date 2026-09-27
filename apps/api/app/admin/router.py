@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.admin.routes import auth, bookings, catalog, chats, home, maintenance, messages, orders, payments, products, reviews, site, tarot_content
+from app.admin.routes import auth, bookings, catalog, chats, home, maintenance, messages, orders, payments, products, reviews, rituals_page, site, tarot_content, users
 
 router = APIRouter()
 router.include_router(auth.router)
@@ -14,5 +14,7 @@ router.include_router(site.router)
 router.include_router(home.router)
 router.include_router(tarot_content.router)
 router.include_router(reviews.router)
+router.include_router(users.router)
+router.include_router(rituals_page.router)
 router.include_router(catalog.router)
 router.include_router(maintenance.router)

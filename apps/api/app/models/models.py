@@ -10,6 +10,12 @@ class User(Document):
     hashed_password: str
     is_admin: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    # For "Forgot password": a question key (see app.core.security_questions)
+    # and the answer, hashed like a password. Empty on accounts made before this.
+    security_question: str = ""
+    security_answer_hash: str = ""
+    reset_failures: int = 0  # wrong answers in a row; too many locks resets for a while
+    reset_locked_until: datetime | None = None
 
     class Settings:
         name = "users"
@@ -549,6 +555,33 @@ class TarotStep(BaseModel):
     title: str
     body: str
     items: list[str] = Field(default_factory=list)
+
+
+class RitualIntentionItem(BaseModel):
+    id: str  # stable; links use it (?book=ritual:<id>)
+    name: str
+
+
+class RitualsContent(Document):
+    """Single admin-editable row with the Rituals page content. Empty text /
+    empty lists / no image mean "use the built-in (translated) default"."""
+    hero_title: str = ""
+    hero_text: str = ""
+    charges_note: str = ""
+    hero_image_url: str | None = None  # None = the built-in diya/temple illustration
+    intentions_title: str = ""
+    intentions_subtitle: str = ""
+    intentions: list[RitualIntentionItem] = Field(default_factory=list)
+    urgent_title: str = ""
+    urgent_lead: str = ""
+    urgent_body: str = ""
+    how_title: str = ""
+    how_intro: str = ""
+    steps: list[str] = Field(default_factory=list)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "rituals_content"
 
 
 class TarotContent(Document):

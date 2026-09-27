@@ -1,10 +1,29 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { listReviews } from "@/lib/reviews";
 import { useHomeContent } from "@/lib/useHomeContent";
 
 const AUTOPLAY_MS = 7000;
+const LATEST = 10; // newest customer reviews in the slider; the rest are on /reviews
+const MAX_QUOTE = 220; // long reviews are shortened here, shown in full on /reviews
+
+interface Slide {
+  quote: string;
+  name: string;
+  detail: string;
+  rating: number;
+  photo_url: string | null;
+}
+
+function shorten(q: string): string {
+  if (q.length <= MAX_QUOTE) return q;
+  const cut = q.slice(0, MAX_QUOTE);
+  const space = cut.lastIndexOf(" ");
+  return `${space > 0 ? cut.slice(0, space) : cut}…`;
+}
 
 // Scattered ✕ / ✳ marks behind the quote, as [left%, top%, kind].
 const MARKS: [number, number, "x" | "star"][] = [
@@ -41,13 +60,29 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-// Home-page testimonial carousel: one centred quote at a time, cross-fading.
+// Testimonial carousel (home and about pages): one centred quote at a time,
+// cross-fading. Shows the newest customer reviews; until there are any, the
+// admin's own testimonials (never the built-in "Sample review" placeholders).
 // Autoplays unless the visitor hovers, focuses it or prefers reduced motion.
 export default function Testimonials() {
   const { t } = useLanguage();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const reviews = useHomeContent()?.testimonials ?? [];
+  const [customer, setCustomer] = useState<Slide[] | null>(null); // null = loading
+  const admin = useHomeContent()?.testimonials ?? [];
+
+  useEffect(() => {
+    listReviews(0, LATEST)
+      .then((p) => setCustomer(p.items.map((r) => ({ quote: shorten(r.text), name: r.name, detail: r.label, rating: r.rating, photo_url: null }))))
+      .catch(() => setCustomer([]));
+  }, []);
+
+  const fromCustomers = !!customer?.length;
+  const reviews: Slide[] = fromCustomers
+    ? customer!
+    : customer === null
+      ? []
+      : admin.filter((r) => !r.quote.startsWith("Sample review"));
   const count = reviews.length;
 
   useEffect(() => {
@@ -140,6 +175,14 @@ export default function Testimonials() {
           </button>
         )}
       </div>
+
+      {fromCustomers && (
+        <div className="relative mt-12 flex justify-center">
+          <Link href="/reviews" className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold hover:underline">
+            {t("review.seeAll")}
+          </Link>
+        </div>
+      )}
 
       {/* Mobile: arrows under the quote */}
       {count > 1 && (

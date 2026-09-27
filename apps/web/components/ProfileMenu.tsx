@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { openBooking } from "@/components/booking/BookConsultation";
 import { getMe } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
@@ -48,12 +49,23 @@ export default function ProfileMenu({ buttonClass, onLogout }: { buttonClass: st
       </button>
 
       {open && (
-        <div role="menu" className="absolute right-0 top-full z-50 mt-3 w-64 border border-line bg-ink-soft py-2 shadow-2xl">
+        <div role="menu" className="absolute right-0 top-full z-50 mt-3 w-72 border border-line bg-ink-soft py-2 shadow-2xl">
           {email && (
             <p className="truncate border-b border-line px-5 pb-3 pt-1 text-sm text-cream/65" title={email}>
               {email}
             </p>
           )}
+          {/* Main actions, highlighted; they open the form right here. */}
+          <div className="flex flex-col gap-2 border-b border-line px-3 py-3">
+            <button role="menuitem" type="button" onClick={() => { setOpen(false); openBooking({ kind: "tarot" }); }}
+              className="block bg-white px-4 py-3 text-center text-[12px] font-extrabold uppercase tracking-[0.14em] text-ink transition-colors hover:bg-gold">
+              {t("tarot.ctaBook")}
+            </button>
+            <button role="menuitem" type="button" onClick={() => { setOpen(false); openBooking({ kind: "ritual" }); }}
+              className="block border border-gold bg-gold/10 px-4 py-3 text-center text-[12px] font-extrabold uppercase tracking-[0.14em] text-gold transition-colors hover:bg-gold hover:text-ink">
+              {t("rituals.ctaEnquire")}
+            </button>
+          </div>
           <Link role="menuitem" href="/bookings" onClick={() => setOpen(false)} className={item}>
             {t("nav.myBookings")}
           </Link>

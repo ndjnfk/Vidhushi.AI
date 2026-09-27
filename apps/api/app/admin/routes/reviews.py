@@ -1,4 +1,4 @@
-"""Admin: every customer review, with Hide/Show for the public Reviews page."""
+"""Admin: every customer review, with Hide/Show for the public Reviews page and Delete."""
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -30,3 +30,16 @@ async def set_hidden(review_id: str, payload: ReviewHiddenIn):
     r.hidden = payload.hidden
     await r.save()
     return admin_out(r)
+
+
+@router.delete("/{review_id}")
+async def delete_review(review_id: str) -> dict:
+    """Removes it for good (Hide keeps it). The customer could then review again."""
+    try:
+        r = await Review.get(PydanticObjectId(review_id))
+    except Exception:
+        r = None
+    if r is None:
+        raise HTTPException(status_code=404, detail="Review not found")
+    await r.delete()
+    return {"deleted": True}

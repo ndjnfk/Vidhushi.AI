@@ -151,10 +151,10 @@ export interface TokenOut {
   token_type: string;
 }
 
-export function register(email: string, password: string): Promise<TokenOut> {
+export function register(email: string, password: string, securityQuestion: string, securityAnswer: string): Promise<TokenOut> {
   return apiFetch<TokenOut>("/auth/register", {
     method: "POST",
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, security_question: securityQuestion, security_answer: securityAnswer }),
   });
 }
 

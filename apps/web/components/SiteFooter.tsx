@@ -1,17 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import { openBooking, type BookingPreset } from "@/components/booking/BookConsultation";
 import Sparkle from "@/components/Sparkle";
 import SocialIcons from "@/components/SocialIcons";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { CONTACT_ICONS } from "@/lib/site";
 import { telHref, useSiteInfo } from "@/lib/useSiteInfo";
 
-const COLUMNS: { title: string; links: { href: string; key: string }[] }[] = [
+// A link, or (with `book`) a button that opens that booking form in place.
+type FooterLink = { key: string; href: string; book?: undefined } | { key: string; href?: undefined; book: BookingPreset };
+
+const COLUMNS: { title: string; links: FooterLink[] }[] = [
   {
     title: "footer.services",
     links: [
-      { href: "/?book=1", key: "home.ctaBook" },
+      { book: { kind: "tarot" }, key: "tarot.ctaBook" },
+      { book: { kind: "ritual" }, key: "rituals.ctaEnquire" },
       { href: "/kundli", key: "nav.kundli" },
       { href: "/matching", key: "nav.matching" },
     ],
@@ -60,8 +65,14 @@ export default function SiteFooter() {
             <h2 className="text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold">{t(col.title)}</h2>
             <ul className="mt-5 flex flex-col gap-3">
               {col.links.map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="text-cream/80 transition-colors hover:text-gold">{t(l.key)}</Link>
+                <li key={l.key}>
+                  {l.book ? (
+                    <button type="button" onClick={() => openBooking(l.book)} className="text-left text-cream/80 transition-colors hover:text-gold">
+                      {t(l.key)}
+                    </button>
+                  ) : (
+                    <Link href={l.href} className="text-cream/80 transition-colors hover:text-gold">{t(l.key)}</Link>
+                  )}
                 </li>
               ))}
             </ul>

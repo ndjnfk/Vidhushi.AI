@@ -15,7 +15,7 @@ from app.schemas.schemas import HomeContentIn, HomeContentOut, ImageUploadIn
 router = APIRouter(prefix="/admin/home", tags=["admin"], dependencies=[Depends(get_current_admin)])
 
 MAX_IMAGE_BYTES = 3 * 1024 * 1024
-SLOT_RE = re.compile(r"^(hero|about1|about2|review-[a-z0-9]{1,24})$")
+SLOT_RE = re.compile(r"^(hero|about1|about2|rituals-hero|review-[a-z0-9]{1,24})$")
 
 
 def _own_image(url: str | None) -> str | None:

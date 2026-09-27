@@ -8,9 +8,9 @@ import Planet from "@/components/Planet";
 import SectionHeading from "@/components/SectionHeading";
 import Sparkle from "@/components/Sparkle";
 import Starfield from "@/components/Starfield";
-import { RITUAL_INTENTIONS } from "@/lib/offerings";
 import { listRituals, type RitualServiceOut } from "@/lib/rituals";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { useRitualsContent } from "@/lib/useRitualsContent";
 
 const PRIMARY_BTN =
   "inline-flex items-center justify-center gap-3 bg-white px-9 py-5 text-[13px] font-extrabold uppercase tracking-[0.16em] text-ink transition-colors hover:bg-gold";
@@ -19,14 +19,13 @@ const OUTLINE_BTN =
 
 export default function RitualsPage() {
   const { t } = useLanguage();
+  const c = useRitualsContent(); // admin-edited ("Rituals page"), else the built-in text
   const [services, setServices] = useState<RitualServiceOut[]>([]);
 
   // Optional extra section: stays hidden if the list is empty or can't load.
   useEffect(() => {
     listRituals().then(setServices).catch(() => {});
   }, []);
-
-  const steps = ["rituals.step1", "rituals.step2", "rituals.step3", "rituals.step4"];
 
   return (
     <div className="-mx-6 -my-8 overflow-x-clip bg-ink font-body text-cream">
@@ -43,10 +42,10 @@ export default function RitualsPage() {
               <span className="text-gold">{t("nav.rituals")}</span>
             </p>
             <h1 className="mt-6 font-display text-[clamp(2.8rem,5.5vw,5rem)] uppercase leading-[1.05] tracking-[0.04em] text-gold">
-              {t("rituals.pageTitle")}
+              {c.hero_title}
             </h1>
-            <p className="mt-6 max-w-xl text-[1.15rem] leading-relaxed text-cream/85">{t("rituals.pageSubtitle")}</p>
-            <p className="mt-6 max-w-xl border-l-2 border-gold/60 pl-5 text-sm italic leading-relaxed text-cream/70">{t("rituals.chargesNote")}</p>
+            <p className="mt-6 max-w-xl whitespace-pre-line text-[1.15rem] leading-relaxed text-cream/85">{c.hero_text}</p>
+            <p className="mt-6 max-w-xl border-l-2 border-gold/60 pl-5 text-sm italic leading-relaxed text-cream/70">{c.charges_note}</p>
             <div className="mt-10 flex flex-wrap gap-4">
               <BookConsultationButton preset={{ kind: "ritual" }} className={PRIMARY_BTN}>
                 <Sparkle className="h-3.5 w-3.5 text-gold-deep" />
@@ -59,10 +58,15 @@ export default function RitualsPage() {
             </div>
           </div>
 
-          {/* Arch with the diya night scene */}
+          {/* Arch: the admin's photo, or the built-in diya night scene */}
           <div className="relative mx-auto w-full max-w-[420px]">
             <div className="relative aspect-[4/5] overflow-hidden rounded-t-full border border-gold/40 shadow-[0_0_60px_rgba(199,161,122,0.15)]">
-              <ArchScene />
+              {c.hero_image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={c.hero_image_url} alt={c.hero_title} className="h-full w-full object-cover" />
+              ) : (
+                <ArchScene />
+              )}
             </div>
             <Sparkle className="absolute -right-3 top-[18%] h-6 w-6 animate-twinkle text-gold" />
             <Sparkle className="absolute -left-4 top-[48%] h-4 w-4 animate-twinkle text-cream/80 [animation-delay:1.2s]" />
@@ -72,17 +76,17 @@ export default function RitualsPage() {
 
       {/* Intentions */}
       <section id="intentions" className="scroll-mt-28 border-t border-line px-6 py-24 md:px-16">
-        <SectionHeading title={t("rituals.intentionsTitle")} subtitle={t("rituals.intentionsSubtitle")} />
+        <SectionHeading title={c.intentions_title} subtitle={c.intentions_subtitle} />
         <ul className="mx-auto mt-16 grid max-w-[1200px] gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {RITUAL_INTENTIONS.map((i, n) => (
-            <li key={i}>
+          {c.intentions.map((i, n) => (
+            <li key={i.id}>
               <BookConsultationButton
-                preset={{ kind: "ritual", intention: i }}
+                preset={{ kind: "ritual", intention: i.id }}
                 className="group flex h-full w-full items-center gap-5 border border-line bg-ink-soft/80 px-6 py-6 text-left transition-colors hover:border-gold/60"
               >
                 <span className="font-display text-sm text-cream/40">{String(n + 1).padStart(2, "0")}</span>
                 <span className="flex-1 font-display text-[1.15rem] uppercase leading-snug tracking-[0.04em] text-cream transition-colors group-hover:text-gold">
-                  {t(`rituals.intention.${i}`)}
+                  {i.name}
                 </span>
                 <Sparkle className="h-3.5 w-3.5 shrink-0 text-gold transition-transform duration-500 group-hover:rotate-90" />
               </BookConsultationButton>
@@ -99,10 +103,10 @@ export default function RitualsPage() {
           <div className="relative">
             <Sparkle className="mx-auto h-8 w-8 text-gold" />
             <h2 className="mt-6 font-display text-[clamp(2rem,3.6vw,3.2rem)] uppercase leading-[1.1] tracking-[0.04em] text-gold">
-              {t("rituals.urgentTitle")}
+              {c.urgent_title}
             </h2>
-            <p className="mx-auto mt-6 max-w-2xl font-display text-[1.3rem] italic leading-snug text-cream">{t("rituals.urgentLead")}</p>
-            <p className="mx-auto mt-5 max-w-2xl leading-relaxed text-cream/80">{t("rituals.urgentBody")}</p>
+            <p className="mx-auto mt-6 max-w-2xl font-display text-[1.3rem] italic leading-snug text-cream">{c.urgent_lead}</p>
+            <p className="mx-auto mt-5 max-w-2xl whitespace-pre-line leading-relaxed text-cream/80">{c.urgent_body}</p>
             <BookConsultationButton preset={{ kind: "ritual", intention: "urgent" }} className={`${PRIMARY_BTN} mt-10`}>
               <Sparkle className="h-3.5 w-3.5 text-gold-deep" />
               {t("rituals.ctaEnquire")}
@@ -115,14 +119,14 @@ export default function RitualsPage() {
       <section className="relative overflow-hidden border-t border-line px-6 py-24 md:px-16">
         <Starfield seed={97} />
         <div className="relative">
-          <SectionHeading title={t("rituals.howTitle")} subtitle={t("rituals.howIntro")} />
-          <ol className="mx-auto mt-16 grid max-w-[1200px] gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {steps.map((k, i) => (
-              <li key={k} className="flex flex-col items-center border border-line bg-ink/85 p-8 text-center backdrop-blur-sm">
+          <SectionHeading title={c.how_title} subtitle={c.how_intro} />
+          <ol className="mx-auto mt-16 flex max-w-[1200px] flex-wrap justify-center gap-6">
+            {c.steps.map((k, i) => (
+              <li key={`${k}-${i}`} className="flex w-full flex-col items-center border border-line bg-ink/85 p-8 text-center backdrop-blur-sm sm:w-[calc((100%-1.5rem)/2)] lg:w-[calc((100%-4.5rem)/4)]">
                 <span className="flex h-14 w-14 items-center justify-center rounded-full border border-dashed border-gold/60 font-display text-2xl text-gold">
                   {i + 1}
                 </span>
-                <p className="mt-6 font-display text-[1.15rem] uppercase leading-snug tracking-[0.04em] text-cream">{t(k)}</p>
+                <p className="mt-6 font-display text-[1.15rem] uppercase leading-snug tracking-[0.04em] text-cream">{k}</p>
               </li>
             ))}
           </ol>

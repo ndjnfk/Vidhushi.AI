@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Planet from "@/components/Planet";
+import { openBooking } from "@/components/booking/BookConsultation";
 import LanguageMenu from "@/components/LanguageMenu";
 import ProfileMenu from "@/components/ProfileMenu";
 import Sparkle from "@/components/Sparkle";
@@ -114,7 +115,7 @@ export default function SiteHeader() {
             <ProfileMenu buttonClass={ICON_BUTTON} onLogout={handleLogout} />
           ) : (
             <Link
-              href={`/account/login?next=${encodeURIComponent(pathname)}`}
+              href="/account/login"
               className="hidden items-center gap-2 border border-cream/40 px-6 py-3.5 text-[13px] font-extrabold uppercase tracking-[0.14em] text-cream transition-colors hover:border-gold hover:text-gold xl:inline-flex"
             >
               <Sparkle className="h-3 w-3 text-gold" />
@@ -164,6 +165,20 @@ export default function SiteHeader() {
                 <Sparkle className="absolute -top-2 right-0 h-4 w-4" />
               </span>
               <p className="mt-6 text-[15px] font-semibold text-cream">{t("nav.tagline")}</p>
+
+              {/* The two main actions, highlighted; they open the form right here. */}
+              <div className="mt-10 flex flex-col gap-3">
+                <button type="button" onClick={() => { setMenuOpen(false); openBooking({ kind: "tarot" }); }}
+                  className="flex items-center justify-center gap-3 bg-white px-6 py-4 text-[13px] font-extrabold uppercase tracking-[0.16em] text-ink transition-colors hover:bg-gold">
+                  <Sparkle className="h-3.5 w-3.5 text-gold-deep" />
+                  {t("tarot.ctaBook")}
+                </button>
+                <button type="button" onClick={() => { setMenuOpen(false); openBooking({ kind: "ritual" }); }}
+                  className="flex items-center justify-center gap-3 border border-gold bg-gold/10 px-6 py-4 text-[13px] font-extrabold uppercase tracking-[0.16em] text-gold transition-colors hover:bg-gold hover:text-ink">
+                  <Sparkle className="h-3.5 w-3.5" />
+                  {t("rituals.ctaEnquire")}
+                </button>
+              </div>
 
               {/* Desktop shows the nav inline in the header, so the drawer only needs it below xl. */}
               <nav className="mt-10 flex flex-col gap-5 xl:hidden">

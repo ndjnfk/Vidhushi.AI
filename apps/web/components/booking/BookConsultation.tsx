@@ -10,7 +10,8 @@ import { isLoggedIn } from "@/lib/auth";
 import { createBooking, type ConsultationRequestOut, type Topic } from "@/lib/bookings";
 import en from "@/lib/i18n/dictionaries/en";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { formatInr, RITUAL_INTENTIONS, type RitualIntention } from "@/lib/offerings";
+import { formatInr } from "@/lib/offerings";
+import { useRitualsContent } from "@/lib/useRitualsContent";
 import { useTarotContent, type TarotSessionItem } from "@/lib/useTarotContent";
 import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
 
@@ -28,7 +29,7 @@ const NOTE_MAX = 1500;
 export type BookingPreset =
   | { kind: "general" }
   | { kind: "tarot"; session?: string }
-  | { kind: "ritual"; intention?: RitualIntention };
+  | { kind: "ritual"; intention?: string }; // an intention id from the Rituals page
 
 const GENERAL: BookingPreset = { kind: "general" };
 
@@ -45,7 +46,7 @@ function sessionTopic(id: string): Topic {
   return "other";
 }
 
-function ritualTopic(i: RitualIntention): Topic {
+function ritualTopic(i: string): Topic {
   return i === "love" ? "love" : i === "career" ? "career" : "other";
 }
 
@@ -65,13 +66,17 @@ function BookingModal({ preset, onClose }: { preset: BookingPreset; onClose: () 
   const initialSession = preset.kind === "tarot"
     ? (sessions.find((x) => x.id === preset.session) ?? sessions[0])?.id ?? ""
     : "";
-  const initialIntention = preset.kind === "ritual" ? preset.intention ?? "other" : "other";
+  // Ritual intentions as edited in the admin panel (or the built-in ones).
+  const { intentions } = useRitualsContent();
+  const initialIntention = preset.kind === "ritual"
+    ? (intentions.find((x) => x.id === preset.intention) ?? intentions[0])?.id ?? ""
+    : "";
   const [form, setForm] = useState({
     name: "", email: "", phone: "", place: "",
     topic: (preset.kind === "ritual" ? ritualTopic(initialIntention) : preset.kind === "tarot" ? sessionTopic(initialSession) : "career") as Topic,
     message: "",
     session: initialSession, modality: modalities[0]?.name ?? "", dob: "", date: "", time: "",
-    intention: initialIntention as RitualIntention, timeline: "",
+    intention: initialIntention, timeline: "",
   });
   const [photo, setPhoto] = useState<string | null>(null); // required for sessions and rituals
   const [busy, setBusy] = useState(false);
@@ -104,7 +109,8 @@ function BookingModal({ preset, onClose }: { preset: BookingPreset; onClose: () 
       return `${lines.join("\n")}\n\n${note}`.trim();
     }
     if (preset.kind === "ritual") {
-      const lines = [`Ritual enquiry: ${en[`rituals.intention.${form.intention}`]}`];
+      const picked = intentions.find((x) => x.id === form.intention);
+      const lines = [`Ritual enquiry: ${en[`rituals.intention.${form.intention}`] ?? picked?.name ?? form.intention}`];
       if (form.timeline.trim()) lines.push(`Preferred timeline: ${form.timeline.trim()}`);
       return `${lines.join("\n")}\n\n${note}`.trim();
     }
@@ -204,11 +210,11 @@ function BookingModal({ preset, onClose }: { preset: BookingPreset; onClose: () 
                   <span className={LABEL}>{t("booking.intention")}</span>
                   <select className={SELECT} value={form.intention} required
                     onChange={(e) => {
-                      const intention = e.target.value as RitualIntention;
+                      const intention = e.target.value;
                       setForm((f) => ({ ...f, intention, topic: ritualTopic(intention) }));
                     }}>
-                    {RITUAL_INTENTIONS.map((i) => (
-                      <option key={i} value={i}>{t(`rituals.intention.${i}`)}</option>
+                    {intentions.map((i) => (
+                      <option key={i.id} value={i.id}>{i.name}</option>
                     ))}
                   </select>
                 </label>
@@ -305,8 +311,66 @@ function BookingModal({ preset, onClose }: { preset: BookingPreset; onClose: () 
   );
 }
 
-// "Book Consultation" button: sends logged-out visitors to log in first, then
-// back here with ?book=<preset>, which re-opens the matching form automatically.
+const OPEN_EVENT = "vidushiji:book";
+
+// "?book=" value -> preset ("1", "tarot[:session]", "ritual[:intention]").
+function parseKey(key: string): BookingPreset | null {
+  if (key === "1") return GENERAL;
+  const [kind, id] = key.split(":");
+  if (kind === "tarot") return id ? { kind, session: id } : { kind };
+  if (kind === "ritual") return id ? { kind, intention: id } : { kind };
+  return null;
+}
+
+function loginThenOpen(key: string) {
+  const back = `${window.location.pathname}?${OPEN_PARAM}=${key}`;
+  window.location.href = `/account/login?next=${encodeURIComponent(back)}`;
+}
+
+/** Opens a booking form right away, from anywhere (header, footer, pages).
+ *  Logged-out visitors log in first and come back to this page, where the
+ *  form opens by itself. */
+export function openBooking(preset: BookingPreset = GENERAL) {
+  if (!isLoggedIn()) return loginThenOpen(presetKey(preset));
+  window.dispatchEvent(new CustomEvent<BookingPreset>(OPEN_EVENT, { detail: preset }));
+}
+
+/** The site's one booking popup (mounted once in the site layout). Also opens
+ *  the form named by ?book= — e.g. when coming back from logging in. */
+export function BookingHost() {
+  const [preset, setPreset] = useState<BookingPreset | null>(null);
+  const close = useCallback(() => setPreset(null), []);
+
+  useEffect(() => {
+    const onOpen = (e: Event) => setPreset((e as CustomEvent<BookingPreset>).detail);
+    window.addEventListener(OPEN_EVENT, onOpen);
+
+    let raf = 0;
+    const key = new URL(window.location.href).searchParams.get(OPEN_PARAM) ?? "";
+    const wanted = parseKey(key);
+    if (wanted && !isLoggedIn()) {
+      loginThenOpen(key);
+    } else if (wanted) {
+      // Strip the param only when actually opening, so a cancelled first
+      // effect run (React dev double-invoke) doesn't lose it.
+      raf = requestAnimationFrame(() => {
+        const url = new URL(window.location.href);
+        url.searchParams.delete(OPEN_PARAM);
+        window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+        setPreset(wanted);
+      });
+    }
+    return () => {
+      window.removeEventListener(OPEN_EVENT, onOpen);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  // Portal: a backdrop-blur ancestor would otherwise trap the fixed overlay.
+  return preset ? createPortal(<BookingModal key={presetKey(preset)} preset={preset} onClose={close} />, document.body) : null;
+}
+
+// A button that opens the booking form (see openBooking).
 export default function BookConsultationButton({
   className,
   children,
@@ -316,46 +380,9 @@ export default function BookConsultationButton({
   children: React.ReactNode;
   preset?: BookingPreset;
 }) {
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-  const key = presetKey(preset);
-
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    if (url.searchParams.get(OPEN_PARAM) !== key) return;
-    if (!isLoggedIn()) {
-      window.location.href = `/account/login?next=${encodeURIComponent(`${url.pathname}?${OPEN_PARAM}=${key}`)}`;
-      return;
-    }
-    // Strip the param only when actually opening, so a cancelled first
-    // effect run (React dev double-invoke) doesn't lose it. Re-reading the URL
-    // lets only the first button with this preset open when several match.
-    const id = requestAnimationFrame(() => {
-      const now = new URL(window.location.href);
-      if (now.searchParams.get(OPEN_PARAM) !== key) return;
-      now.searchParams.delete(OPEN_PARAM);
-      window.history.replaceState(null, "", now.pathname + now.search + now.hash);
-      setOpen(true);
-    });
-    return () => cancelAnimationFrame(id);
-  }, [key]);
-
-  function handleClick() {
-    if (!isLoggedIn()) {
-      const back = `${window.location.pathname}?${OPEN_PARAM}=${key}`;
-      window.location.href = `/account/login?next=${encodeURIComponent(back)}`;
-      return;
-    }
-    setOpen(true);
-  }
-
   return (
-    <>
-      <button type="button" onClick={handleClick} className={className}>
-        {children}
-      </button>
-      {/* Portal: a backdrop-blur ancestor (e.g. a service card) would otherwise trap the fixed overlay. */}
-      {open && createPortal(<BookingModal preset={preset} onClose={close} />, document.body)}
-    </>
+    <button type="button" onClick={() => openBooking(preset)} className={className}>
+      {children}
+    </button>
   );
 }

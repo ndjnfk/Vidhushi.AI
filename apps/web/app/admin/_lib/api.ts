@@ -4,6 +4,7 @@ import { makeChatApi, type ChatConversationOut } from "@/lib/chat";
 import type { ProductOut, ShopOrderOut } from "@/lib/shop";
 import type { HomeContent } from "@/lib/useHomeContent";
 import type { TarotContent } from "@/lib/useTarotContent";
+import type { RitualsContent } from "@/lib/useRitualsContent";
 import type { ReviewOut } from "@/lib/reviews";
 import type { SocialLink } from "@/lib/useSiteInfo";
 import { adminFetch } from "./session";
@@ -130,3 +131,26 @@ export interface AdminReviewOut extends ReviewOut {
 export const listAdminReviews = () => adminFetch<AdminReviewOut[]>("/admin/reviews");
 export const setReviewHidden = (id: string, hidden: boolean) =>
   adminFetch<AdminReviewOut>(`/admin/reviews/${id}`, { method: "PUT", body: JSON.stringify({ hidden }) });
+export const deleteReview = (id: string) => adminFetch<{ deleted: boolean }>(`/admin/reviews/${id}`, { method: "DELETE" });
+
+// Customer accounts (for clients who forgot their password and security answer).
+export interface AdminUserOut {
+  id: string;
+  email: string;
+  is_admin: boolean;
+  created_at: string;
+  security_question: string; // "" if not set
+}
+export const listAdminUsers = (q = "") => adminFetch<AdminUserOut[]>(`/admin/users${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`);
+export const adminSetPassword = (id: string, newPassword: string) =>
+  adminFetch<AdminUserOut>(`/admin/users/${id}/password`, { method: "PUT", body: JSON.stringify({ new_password: newPassword }) });
+export const adminSetSecurity = (id: string, securityQuestion: string, securityAnswer: string) =>
+  adminFetch<AdminUserOut>(`/admin/users/${id}/security`, {
+    method: "PUT",
+    body: JSON.stringify({ security_question: securityQuestion, security_answer: securityAnswer }),
+  });
+
+// Rituals page content (hero, intentions, urgent wish, steps).
+export const getRitualsPage = () => adminFetch<RitualsContent>("/admin/rituals-page");
+export const saveRitualsPage = (body: RitualsContent) =>
+  adminFetch<RitualsContent>("/admin/rituals-page", { method: "PUT", body: JSON.stringify(body) });
