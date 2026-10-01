@@ -38,6 +38,38 @@ export function snippet(text: string, max = 155): string {
   return plain.length <= max ? plain : `${plain.slice(0, max - 1).replace(/\s+\S*$/, "")}…`;
 }
 
+// Site-wide identity, rendered on every public page by app/(site)/layout.tsx.
+export const SITE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: SITE_NAME,
+      inLanguage: ["en-IN", "hi-IN"],
+      publisher: { "@id": `${SITE_URL}/#person` },
+    },
+    {
+      "@type": "Person",
+      "@id": `${SITE_URL}/#person`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      jobTitle: "Vedic Astrologer & Tarot Reader",
+      knowsAbout: ["Vedic astrology", "Kundli", "Guna Milan", "Tarot reading", "Healing rituals"],
+    },
+    {
+      "@type": "ProfessionalService",
+      "@id": `${SITE_URL}/#business`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      description: DEFAULT_DESCRIPTION,
+      areaServed: "IN",
+      founder: { "@id": `${SITE_URL}/#person` },
+    },
+  ],
+};
+
 export function JsonLd({ data }: { data: object }) {
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }} />;
 }
