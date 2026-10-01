@@ -9,7 +9,7 @@ import { useHomeContent } from "@/lib/useHomeContent";
 export const SERVICES = [
   { key: "about.serviceKundli", href: "/kundli" },
   { key: "about.serviceMatching", href: "/matching" },
-  { key: "about.serviceTarot", href: "/tarot" },
+  { key: "about.serviceTarot", href: "/pricing" },
   { key: "about.serviceBracelets", href: "/shop" },
 ];
 

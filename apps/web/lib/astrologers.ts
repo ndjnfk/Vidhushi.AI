@@ -1,19 +1,6 @@
 import { apiFetch } from "@/lib/api";
 import type { OrderCreateOut } from "@/lib/payments";
 
-export interface AstrologerOut {
-  id: string;
-  name: string;
-  vendor_type: string;
-  bio: string;
-  languages: string[];
-  specialties: string[];
-  experience_years: number;
-  rate_per_session: number | null;
-  is_online: boolean;
-  rating: number;
-}
-
 export interface ConsultationBookingOut {
   id: string;
   vendor_id: string;
@@ -26,14 +13,6 @@ export interface ConsultationMessageOut {
   sender: string;
   text: string;
   sent_at: string;
-}
-
-export function listAstrologers(): Promise<AstrologerOut[]> {
-  return apiFetch<AstrologerOut[]>("/astrologers");
-}
-
-export function getAstrologer(id: string): Promise<AstrologerOut> {
-  return apiFetch<AstrologerOut>(`/astrologers/${id}`);
 }
 
 export function requestConsultation(vendorId: string): Promise<ConsultationBookingOut> {

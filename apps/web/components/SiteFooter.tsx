@@ -19,6 +19,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
       { book: { kind: "ritual" }, key: "rituals.ctaEnquire" },
       { href: "/kundli", key: "nav.kundli" },
       { href: "/matching", key: "nav.matching" },
+      { href: "/shop", key: "nav.shop" },
     ],
   },
   {
@@ -27,7 +28,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
       { href: "/", key: "nav.home" },
       { href: "/about", key: "nav.about" },
       { href: "/pricing", key: "nav.pricing" },
-      { href: "/shop", key: "nav.shop" },
+      { href: "/blog", key: "nav.blog" },
       { href: "/reviews", key: "nav.reviews" },
       { href: "/contact", key: "nav.contact" },
     ],

@@ -424,22 +424,59 @@ class TarotReadingOut(BaseModel):
 
 # ---- Blog ----
 
+SLUG_PATTERN = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
+
+
+def _clean_tags(tags: list[str]) -> list[str]:
+    out: list[str] = []
+    for t in tags:
+        t = t.strip().lower()
+        if t and t not in out:
+            out.append(t)
+    if len(out) > 10:
+        raise ValueError("At most 10 tags")
+    if any(len(t) > 40 for t in out):
+        raise ValueError("Tags must be 40 characters or fewer")
+    return out
+
+
 class BlogPostCreate(BaseModel):
-    title: str
-    slug: str
-    excerpt: str
-    body: str
+    title: str = Field(min_length=1, max_length=150)
+    slug: str = Field(min_length=1, max_length=80, pattern=SLUG_PATTERN)
+    excerpt: str = Field(default="", max_length=300)
+    body: str = Field(min_length=1, max_length=100_000)  # markdown
     tags: list[str] = Field(default_factory=list)
-    author_name: str = "Vidushiji.ai"
-    published: bool = True
+    author_name: str = Field(default="Vidushi Ji", max_length=80)
+    published: bool = False
+    # Search-engine overrides; empty means "use the title / excerpt".
+    seo_title: str = Field(default="", max_length=70)
+    meta_description: str = Field(default="", max_length=170)
+    cover_image_url: str | None = None
+    cover_image_alt: str = Field(default="", max_length=150)
+
+    @field_validator("tags")
+    @classmethod
+    def _tags(cls, v: list[str]) -> list[str]:
+        return _clean_tags(v)
 
 
 class BlogPostUpdate(BaseModel):
-    title: str | None = None
-    excerpt: str | None = None
-    body: str | None = None
+    title: str | None = Field(default=None, min_length=1, max_length=150)
+    slug: str | None = Field(default=None, min_length=1, max_length=80, pattern=SLUG_PATTERN)
+    excerpt: str | None = Field(default=None, max_length=300)
+    body: str | None = Field(default=None, min_length=1, max_length=100_000)
     tags: list[str] | None = None
+    author_name: str | None = Field(default=None, max_length=80)
     published: bool | None = None
+    seo_title: str | None = Field(default=None, max_length=70)
+    meta_description: str | None = Field(default=None, max_length=170)
+    cover_image_url: str | None = None
+    cover_image_alt: str | None = Field(default=None, max_length=150)
+
+    @field_validator("tags")
+    @classmethod
+    def _tags(cls, v: list[str] | None) -> list[str] | None:
+        return None if v is None else _clean_tags(v)
 
 
 class BlogPostSummaryOut(BaseModel):
@@ -450,11 +487,21 @@ class BlogPostSummaryOut(BaseModel):
     tags: list[str]
     author_name: str
     created_at: datetime
+    updated_at: datetime
+    published_at: datetime | None = None
+    cover_image_url: str | None = None
+    cover_image_alt: str = ""
+    reading_minutes: int = 1
 
 
 class BlogPostOut(BlogPostSummaryOut):
     body: str
-    updated_at: datetime
+    seo_title: str = ""
+    meta_description: str = ""
+
+
+class BlogPostAdminOut(BlogPostOut):
+    published: bool
 
 
 # ---- Shop ----

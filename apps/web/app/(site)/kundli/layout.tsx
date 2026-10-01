@@ -1,3 +1,6 @@
+import OnlyOnPath from "@/components/OnlyOnPath";
+import ServiceInfo from "@/components/ServiceInfo";
+import { KUNDLI } from "@/lib/serviceContent";
 import { JsonLd, SITE_NAME, SITE_URL, pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata(
@@ -22,6 +25,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <>
       <JsonLd data={service} />
       {children}
+      <OnlyOnPath path="/kundli">
+        <ServiceInfo content={KUNDLI} />
+      </OnlyOnPath>
     </>
   );
 }

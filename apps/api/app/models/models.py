@@ -322,8 +322,14 @@ class BlogPost(Document):
     excerpt: str
     body: str  # markdown
     tags: list[str] = Field(default_factory=list)
-    author_name: str = "Vidushiji.ai"
+    author_name: str = "Vidushi Ji"
     published: bool = True
+    # Search-engine overrides; empty means "use the title / excerpt".
+    seo_title: str = ""
+    meta_description: str = ""
+    cover_image_url: str | None = None  # uploaded via /admin/home/images/blog-*
+    cover_image_alt: str = ""
+    published_at: datetime | None = None  # first time the post went live
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

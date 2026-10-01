@@ -4,13 +4,14 @@ import type { Metadata } from "next";
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://vidushiji.com").replace(/\/$/, "");
 export const SITE_NAME = "Vidushi Ji";
 export const DEFAULT_DESCRIPTION =
-  "Vedic astrology and tarot by Vidushi Ji — free Kundli, Guna Milan matching, tarot readings, healing rituals, poojas and energised healing bracelets.";
+  "Vedic astrology and tarot by Vidushi Ji — free Kundli, Guna Milan matching, tarot readings, healing rituals and energised healing bracelets.";
 
 // Per-route metadata: title, description, canonical and Open Graph in one go.
-// The root layout's title template appends " | Vidushi Ji".
+// The " | Vidushi Ji" suffix is added here rather than via the root layout's
+// title template, which Next.js drops below any layout that sets a plain title.
 export function pageMetadata(title: string, description: string, path: string): Metadata {
   return {
-    title,
+    title: { absolute: `${title} | ${SITE_NAME}` },
     description,
     alternates: { canonical: path },
     openGraph: { title: `${title} | ${SITE_NAME}`, description, url: path, siteName: SITE_NAME, type: "website", locale: "en_IN" },
@@ -22,10 +23,10 @@ export const NO_INDEX: Metadata = { robots: { index: false, follow: true } };
 
 // Server-side fetch for metadata and the sitemap. Never throws: a backend
 // outage should degrade to generic metadata, not break the page.
-export async function fetchPublic<T>(path: string): Promise<T | null> {
+export async function fetchPublic<T>(path: string, revalidate = 3600): Promise<T | null> {
   const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
   try {
-    const res = await fetch(`${api}${path}`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${api}${path}`, { next: { revalidate } });
     return res.ok ? ((await res.json()) as T) : null;
   } catch {
     return null;

@@ -5,6 +5,7 @@ import type { ProductOut, ShopOrderOut } from "@/lib/shop";
 import type { HomeContent } from "@/lib/useHomeContent";
 import type { TarotContent } from "@/lib/useTarotContent";
 import type { RitualsContent } from "@/lib/useRitualsContent";
+import type { BlogPostOut } from "@/lib/blog";
 import type { ReviewOut } from "@/lib/reviews";
 import type { SocialLink } from "@/lib/useSiteInfo";
 import { adminFetch } from "./session";
@@ -156,3 +157,33 @@ export const adminSetSecurity = (id: string, securityQuestion: string, securityA
 export const getRitualsPage = () => adminFetch<RitualsContent>("/admin/rituals-page");
 export const saveRitualsPage = (body: RitualsContent) =>
   adminFetch<RitualsContent>("/admin/rituals-page", { method: "PUT", body: JSON.stringify(body) });
+
+// ---- Blog ----
+
+export interface BlogPostIn {
+  title: string;
+  slug: string;
+  excerpt: string;
+  body: string;
+  tags: string[];
+  author_name: string;
+  published: boolean;
+  seo_title: string;
+  meta_description: string;
+  cover_image_url: string | null;
+  cover_image_alt: string;
+}
+
+export interface AdminBlogPost extends BlogPostOut {
+  published: boolean;
+}
+
+export const listAdminPosts = () => adminFetch<AdminBlogPost[]>("/admin/blog");
+export const getAdminPost = (id: string) => adminFetch<AdminBlogPost>(`/admin/blog/${id}`);
+export const createPost = (body: BlogPostIn) => adminFetch<AdminBlogPost>("/admin/blog", { method: "POST", body: JSON.stringify(body) });
+export const updatePost = (id: string, body: Partial<BlogPostIn>) =>
+  adminFetch<AdminBlogPost>(`/admin/blog/${id}`, { method: "PUT", body: JSON.stringify(body) });
+export const deletePost = (id: string) => adminFetch<{ deleted: boolean }>(`/admin/blog/${id}`, { method: "DELETE" });
+// Cover and in-article images share the home-page image store ("blog-…" slots).
+export const uploadBlogImage = (data_url: string) =>
+  uploadHomeImage(`blog-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, data_url);

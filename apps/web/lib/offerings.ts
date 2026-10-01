@@ -1,4 +1,4 @@
-// Tarot sessions and healing-ritual intentions shown on /tarot and /rituals.
+// Tarot sessions and healing-ritual intentions shown on the home page and /rituals.
 // Display text lives in the i18n dictionaries under the `key` prefix
 // (`${key}.name`, `${key}.desc`); the booking form sends the English name
 // to Vidushi Ji so requests read the same whatever the visitor's language.

@@ -2,12 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from datetime import datetime
 
+from beanie import PydanticObjectId
+
 from app.admin.deps import get_current_admin
+from app.admin.routes.home import _own_image
+from app.api.routes.blog import admin_out
 from app.models.models import BlogPost, PoojaService, RitualService, ShopOrder, User, Vendor, VendorBranding
 from app.payments.factory import SUPPORTED_GATEWAYS, get_payment_settings, resolve_credentials
 from app.schemas.schemas import (
+    BlogPostAdminOut,
     BlogPostCreate,
-    BlogPostOut,
     BlogPostUpdate,
     PaymentSettingsOut,
     PaymentSettingsUpdate,
@@ -192,46 +196,63 @@ async def create_ritual_service(payload: RitualServiceCreate):
 
 # ---- Blog management ----
 
-def _blog_out(p: BlogPost) -> BlogPostOut:
-    return BlogPostOut(
-        id=str(p.id), title=p.title, slug=p.slug, excerpt=p.excerpt, body=p.body,
-        tags=p.tags, author_name=p.author_name, created_at=p.created_at, updated_at=p.updated_at,
-    )
-
-
-@router.get("/blog", response_model=list[BlogPostOut])
-async def admin_list_posts():
-    posts = await BlogPost.find_all().sort("-created_at").to_list()
-    return [_blog_out(p) for p in posts]
-
-
-@router.post("/blog", response_model=BlogPostOut)
-async def create_post(payload: BlogPostCreate):
-    existing = await BlogPost.find_one({"slug": payload.slug})
-    if existing is not None:
-        raise HTTPException(status_code=400, detail=f"Slug '{payload.slug}' already in use")
-    post = BlogPost(**payload.model_dump())
-    await post.insert()
-    return _blog_out(post)
-
-
-@router.put("/blog/{post_id}", response_model=BlogPostOut)
-async def update_post(post_id: str, payload: BlogPostUpdate):
-    post = await BlogPost.get(post_id)
+async def _get_post(post_id: str) -> BlogPost:
+    post = await BlogPost.get(post_id) if PydanticObjectId.is_valid(post_id) else None
     if post is None:
         raise HTTPException(status_code=404, detail="Post not found")
-    for field, value in payload.model_dump(exclude_unset=True).items():
-        setattr(post, field, value)
+    return post
+
+
+async def _check_slug_free(slug: str, except_id=None) -> None:
+    existing = await BlogPost.find_one({"slug": slug})
+    if existing is not None and existing.id != except_id:
+        raise HTTPException(status_code=400, detail=f"Slug '{slug}' already in use")
+
+
+@router.get("/blog", response_model=list[BlogPostAdminOut])
+async def admin_list_posts():
+    posts = await BlogPost.find_all().sort("-created_at").to_list()
+    return [admin_out(p) for p in posts]
+
+
+@router.get("/blog/{post_id}", response_model=BlogPostAdminOut)
+async def admin_get_post(post_id: str):
+    return admin_out(await _get_post(post_id))
+
+
+@router.post("/blog", response_model=BlogPostAdminOut)
+async def create_post(payload: BlogPostCreate):
+    await _check_slug_free(payload.slug)
+    data = payload.model_dump()
+    data["cover_image_url"] = _own_image(payload.cover_image_url)
+    post = BlogPost(**data)
+    if post.published:
+        post.published_at = datetime.utcnow()
+    await post.insert()
+    return admin_out(post)
+
+
+@router.put("/blog/{post_id}", response_model=BlogPostAdminOut)
+async def update_post(post_id: str, payload: BlogPostUpdate):
+    post = await _get_post(post_id)
+    changes = payload.model_dump(exclude_unset=True)
+    if changes.get("slug") and changes["slug"] != post.slug:
+        await _check_slug_free(changes["slug"], except_id=post.id)
+    if "cover_image_url" in changes:
+        changes["cover_image_url"] = _own_image(changes["cover_image_url"])
+    for field, value in changes.items():
+        if value is not None or field == "cover_image_url":
+            setattr(post, field, value)
+    if post.published and post.published_at is None:
+        post.published_at = datetime.utcnow()
     post.updated_at = datetime.utcnow()
     await post.save()
-    return _blog_out(post)
+    return admin_out(post)
 
 
 @router.delete("/blog/{post_id}")
 async def delete_post(post_id: str):
-    post = await BlogPost.get(post_id)
-    if post is None:
-        raise HTTPException(status_code=404, detail="Post not found")
+    post = await _get_post(post_id)
     await post.delete()
     return {"deleted": True}
 

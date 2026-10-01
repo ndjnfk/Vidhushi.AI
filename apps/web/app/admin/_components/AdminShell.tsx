@@ -20,6 +20,7 @@ const NAV = [
   { href: "/admin/messages", label: "Messages", icon: "M3 6h18v12H3zM3 6l9 7 9-7" },
   { href: "/admin/home", label: "Home page", icon: "M3 11l9-8 9 8M5 10v10h14V10" },
   { href: "/admin/rituals-page", label: "Rituals page", icon: "M12 3c-2 3-4 4.5-4 7.5a4 4 0 0 0 8 0C16 7.5 14 6 12 3ZM4 21h16M7 21v-3h10v3" },
+  { href: "/admin/blog", label: "Blog", icon: "M5 3h10l4 4v14H5zM15 3v4h4M8 11h8M8 15h8M8 19h5" },
   { href: "/admin/tarot", label: "Tarot sessions", icon: "M7 3h10v18H7zM12 8l1.2 2.6 2.8.4-2 2 .5 2.8L12 14.5 9.5 15.8l.5-2.8-2-2 2.8-.4z" },
   { href: "/admin/site", label: "Site settings", icon: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1" },
   { href: "/admin/payments", label: "Payments", icon: "M3 6h18v12H3zM3 10h18M7 15h3" },

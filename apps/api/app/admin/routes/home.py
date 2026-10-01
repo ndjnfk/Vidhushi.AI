@@ -15,7 +15,7 @@ from app.schemas.schemas import HomeContentIn, HomeContentOut, HomeLayoutIn, Ima
 router = APIRouter(prefix="/admin/home", tags=["admin"], dependencies=[Depends(get_current_admin)])
 
 MAX_IMAGE_BYTES = 3 * 1024 * 1024
-SLOT_RE = re.compile(r"^(hero|about1|about2|rituals-hero|review-[a-z0-9]{1,24})$")
+SLOT_RE = re.compile(r"^(hero|about1|about2|rituals-hero|review-[a-z0-9]{1,24}|blog-[a-z0-9]{1,24})$")
 
 
 def _own_image(url: str | None) -> str | None:
@@ -78,7 +78,8 @@ async def update_layout(payload: HomeLayoutIn):
 @router.put("/images/{slot}")
 async def upload_image(slot: str, payload: ImageUploadIn) -> dict:
     """Store an image and return its URL; the caller puts that URL into the
-    content and saves. (Reviewer photos use slots like "review-ab12".)"""
+    content and saves. (Reviewer photos use slots like "review-ab12", blog
+    covers and article images "blog-ab12".)"""
     if not SLOT_RE.match(slot):
         raise HTTPException(status_code=422, detail="Unknown image slot")
     try:
