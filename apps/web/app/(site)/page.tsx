@@ -7,7 +7,7 @@ import ProductSlider from "@/components/shop/ProductSlider";
 import AboutSection from "@/components/home/AboutSection";
 import RateList from "@/components/home/RateList";
 import Stats from "@/components/home/Stats";
-import { TarotAreas, TarotHowToBook, TarotModalities, TarotSessions } from "@/components/home/TarotServices";
+import { TarotAreas, TarotHowToBook, TarotModalities } from "@/components/home/TarotServices";
 import Testimonials from "@/components/home/Testimonials";
 import Sparkle from "@/components/Sparkle";
 import Starfield from "@/components/Starfield";
@@ -110,7 +110,6 @@ export default function Home() {
     hero: () => <Hero />,
     about: () => <AboutSection />,
     rates: () => <RateList limit={HOME_RATES} />,
-    sessions: () => <TarotSessions />,
     areas: () => <TarotAreas />,
     modalities: () => <TarotModalities />,
     how: () => <TarotHowToBook />,

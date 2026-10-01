@@ -7,77 +7,19 @@ import Starfield from "@/components/Starfield";
 import OfferingIcon from "@/components/tarot/OfferingIcon";
 import { formatInr } from "@/lib/offerings";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { useTarotContent, type TarotSessionItem } from "@/lib/useTarotContent";
+import { useTarotContent } from "@/lib/useTarotContent";
 
 const PRIMARY_BTN =
   "inline-flex items-center justify-center gap-3 bg-white px-9 py-5 text-[13px] font-extrabold uppercase tracking-[0.16em] text-ink transition-colors hover:bg-gold";
-const OUTLINE_BTN =
-  "inline-flex items-center justify-center gap-3 border border-cream/40 px-9 py-5 text-[13px] font-extrabold uppercase tracking-[0.16em] text-cream transition-colors hover:border-gold hover:text-gold";
-const EYEBROW = "text-[12px] font-extrabold uppercase tracking-[0.16em]";
 
 const AREA_ICON: Record<string, string> = { "area-love": "love", "area-career": "career", "area-health": "health" };
 
-function SessionCard({ session }: { session: TarotSessionItem }) {
-  const { t } = useLanguage();
-  const tag = session.tag || (session.group === "reading" ? t("tarot.groupReading") : "");
-  return (
-    <article className="group flex flex-col border border-line bg-ink-soft/80 p-7 backdrop-blur-sm transition-colors hover:border-gold/60">
-      <div className="flex items-start justify-between gap-4">
-        <span className={`${EYEBROW} text-cream/60`}>{tag}</span>
-        <Sparkle className="h-3 w-3 text-gold/70 transition-transform duration-500 group-hover:rotate-90" />
-      </div>
-      <h3 className="mt-5 font-display text-[1.45rem] uppercase leading-tight tracking-[0.04em] text-gold">{session.name}</h3>
-      <p className="mt-4 flex-1 leading-relaxed text-cream/75">{session.description}</p>
-      <p className="mt-6 border-t border-line pt-5 font-display text-[2rem] leading-none text-cream">
-        {session.price === null ? t("tarot.priceOnRequest") : formatInr(session.price)}
-      </p>
-      <BookConsultationButton preset={{ kind: "tarot", session: session.id }} className={`${OUTLINE_BTN} mt-6 w-full px-6 py-4`}>
-        <Sparkle className="h-3 w-3 text-gold" />
-        {t("tarot.bookThis")}
-      </BookConsultationButton>
-    </article>
-  );
-}
-
-function SessionGroup({ title, sessions, first }: { title: string; sessions: TarotSessionItem[]; first: boolean }) {
-  if (sessions.length === 0) return null;
-  return (
-    <>
-      <h3 className={`${EYEBROW} ${first ? "" : "mt-16"} flex items-center gap-3 text-gold`}>
-        <Sparkle className="h-3 w-3" />
-        {title}
-      </h3>
-      <div className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        {sessions.map((s) => <SessionCard key={s.id} session={s} />)}
-      </div>
-    </>
-  );
-}
-
-// Home-page tarot sections: priced sessions, guidance areas, modalities and
-// booking steps. Each is its own component so the admin can hide or reorder
-// them. Content comes from the admin panel ("Tarot sessions"), falling back
-// to the built-in text.
-
-export function TarotSessions() {
-  const { t } = useLanguage();
-  const c = useTarotContent();
-  const calls = c.sessions.filter((s) => s.group === "call");
-  const readings = c.sessions.filter((s) => s.group === "reading");
-  if (calls.length + readings.length === 0) return null;
-  return (
-    <section id="sessions" className="scroll-mt-28 border-t border-line px-6 py-24 md:px-16">
-      <SectionHeading title={c.sessions_title} subtitle={c.sessions_subtitle} />
-      <div className="mx-auto mt-16 max-w-[1400px]">
-        <SessionGroup title={t("tarot.groupCall")} sessions={calls} first />
-        <SessionGroup title={t("tarot.groupReading")} sessions={readings} first={calls.length === 0} />
-      </div>
-    </section>
-  );
-}
+// Home-page tarot sections: guidance areas, modalities and booking steps.
+// Each is its own component so the admin can hide or reorder them. Content
+// comes from the admin panel ("Tarot sessions"), falling back to the
+// built-in text.
 
 export function TarotAreas() {
-  const { t } = useLanguage();
   const c = useTarotContent();
   const areas = c.sessions.filter((s) => s.group === "area");
   if (areas.length === 0) return null;
@@ -95,10 +37,6 @@ export function TarotAreas() {
               <h3 className="mt-6 font-display text-[1.45rem] uppercase tracking-[0.04em] text-gold">{s.name}</h3>
               <p className="mt-4 flex-1 leading-relaxed text-cream/75">{s.description}</p>
               {s.price !== null && <p className="mt-5 font-display text-2xl text-cream">{formatInr(s.price)}</p>}
-              <BookConsultationButton preset={{ kind: "tarot", session: s.id }} className={`${OUTLINE_BTN} mt-8 px-8 py-4`}>
-                <Sparkle className="h-3 w-3 text-gold" />
-                {t("tarot.bookThis")}
-              </BookConsultationButton>
             </article>
           ))}
         </div>

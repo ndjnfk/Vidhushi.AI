@@ -46,6 +46,14 @@ export default function ProfileMenu({ buttonClass, onLogout }: { buttonClass: st
             <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
           </svg>
         )}
+        {/* Small arrow so it reads as a menu; flips while open. */}
+        <span aria-hidden="true"
+          className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border border-gold/70 bg-ink text-gold">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+            className={`h-2.5 w-2.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`}>
+            <path d="M3 4.5 6 7.5 9 4.5" />
+          </svg>
+        </span>
       </button>
 
       {open && (

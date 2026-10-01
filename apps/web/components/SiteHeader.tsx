@@ -5,14 +5,12 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Planet from "@/components/Planet";
 import { openBooking } from "@/components/booking/BookConsultation";
-import LanguageMenu from "@/components/LanguageMenu";
 import ProfileMenu from "@/components/ProfileMenu";
 import Sparkle from "@/components/Sparkle";
 import SocialIcons from "@/components/SocialIcons";
 import Starfield from "@/components/Starfield";
 import { clearToken, isLoggedIn } from "@/lib/auth";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { LANGUAGES } from "@/lib/i18n/languages";
 import { CONTACT_ICONS } from "@/lib/site";
 import { telHref, useSiteInfo } from "@/lib/useSiteInfo";
 import { useCart } from "@/lib/CartContext";
@@ -47,7 +45,7 @@ function ContactIcon({ d }: { d: string }) {
 export default function SiteHeader() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { locale, setLocale, t } = useLanguage();
+  const { t } = useLanguage();
   const pathname = usePathname();
   const site = useSiteInfo();
   const { itemCount, openCart } = useCart();
@@ -123,7 +121,6 @@ export default function SiteHeader() {
               {t("nav.login")}
             </Link>
           )}
-          <LanguageMenu className="hidden xl:block" />
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
@@ -244,16 +241,6 @@ export default function SiteHeader() {
                     {t("nav.login")}
                   </Link>
                 )}
-                <select
-                  value={locale}
-                  onChange={(e) => setLocale(e.target.value)}
-                  className="rounded border border-line bg-ink px-3 py-2 text-cream"
-                  aria-label="Language"
-                >
-                  {LANGUAGES.map((lang) => (
-                    <option key={lang.code} value={lang.code}>{lang.native}</option>
-                  ))}
-                </select>
               </div>
             </div>
           </aside>

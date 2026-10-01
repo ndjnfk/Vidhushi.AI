@@ -820,7 +820,7 @@ class RateItemIn(BaseModel):
 
 
 # Built-in order of the home page sections.
-HOME_SECTIONS = ["hero", "about", "rates", "sessions", "areas", "modalities", "how", "bracelets", "stats", "reviews"]
+HOME_SECTIONS = ["hero", "about", "rates", "bracelets", "stats", "areas", "modalities", "how", "reviews"]
 
 
 class HomeContentIn(BaseModel):

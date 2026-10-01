@@ -7,7 +7,6 @@ import {
   CHANNELS,
   defaultTarotContent,
   TAROT_ICONS,
-  type SessionGroup,
   type TarotContent,
   type TarotSessionItem,
 } from "@/lib/useTarotContent";
@@ -16,14 +15,10 @@ import { getTarotContent, saveTarotContent } from "../../_lib/api";
 import { BTN, INPUT, LABEL, ListEditor, Section, Text } from "../../_components/ContentEditor";
 import { SectionControls, useHomeLayout } from "../../_components/SectionLayout";
 
-const GROUPS: { value: SessionGroup; key: string }[] = [
-  { value: "call", key: "adminTarot.groupCall" },
-  { value: "reading", key: "adminTarot.groupReading" },
-  { value: "area", key: "adminTarot.groupArea" },
-];
 
 // The home page sections edited here; they can be hidden and reordered.
-const TAROT_SECTIONS: HomeSection[] = ["sessions", "areas", "modalities", "how"];
+const TAROT_SECTIONS: HomeSection[] = ["areas", "modalities", "how"];
+const isArea = (s: TarotSessionItem) => s.group === "area";
 
 const newId = () => `s-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -51,23 +46,21 @@ export default function AdminTarotPage() {
     muted: layout.layout?.hidden.includes(s) ?? false,
   });
 
+  // The guidance area cards are the "area" sessions; they are edited here.
+  const areaItems = c.sessions.filter(isArea);
+
   const editors: Record<string, React.ReactNode> = {
-    sessions: (
-      <Section title={t("adminTarot.sessions")} hint={t("adminTarot.sessionsHint")} {...lay("sessions")}>
-        {text("sessions_title", t("adminHome.heading"), 120)}
-        {text("sessions_subtitle", t("adminTarot.subtitle"), 300)}
+    areas: (
+      <Section title={t("adminTarot.areas")} hint={t("adminTarot.areasHint")} {...lay("areas")}>
+        {text("areas_title", t("adminHome.heading"), 120)}
+        {text("areas_subtitle", t("adminTarot.subtitle"), 300, true)}
+        {text("areas_note", t("adminTarot.note"), 500, true)}
         <ListEditor<TarotSessionItem>
-          label={t("adminTarot.sessions")} items={c.sessions} defaults={d.sessions} max={30} addLabel={t("adminTarot.addSession")}
-          onChange={(sessions) => set({ sessions })}
-          blank={() => ({ id: newId(), group: "reading", name: "", description: "", price: null, tag: "", channels: [...CHANNELS] })}
+          label={t("adminTarot.areaCards")} items={areaItems} defaults={d.sessions.filter(isArea)} max={12} addLabel={t("adminTarot.addArea")}
+          onChange={(areas) => set({ sessions: [...c.sessions.filter((x) => !isArea(x)), ...areas] })}
+          blank={() => ({ id: newId(), group: "area", name: "", description: "", price: null, tag: "", channels: [...CHANNELS] })}
           render={(s, setS) => (
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="flex flex-col gap-1.5">
-                <span className={LABEL}>{t("adminTarot.group")}</span>
-                <select className={`${INPUT} bg-ink`} value={s.group} onChange={(e) => setS({ ...s, group: e.target.value as SessionGroup })}>
-                  {GROUPS.map((g) => <option key={g.value} value={g.value}>{t(g.key)}</option>)}
-                </select>
-              </label>
               <label className="flex flex-col gap-1.5">
                 <span className={LABEL}>{t("adminTarot.name")}</span>
                 <input className={INPUT} value={s.name} maxLength={80} required onChange={(e) => setS({ ...s, name: e.target.value })} />
@@ -76,10 +69,6 @@ export default function AdminTarotPage() {
                 <span className={LABEL}>{t("adminTarot.price")}</span>
                 <input type="number" min={0} max={10000000} className={INPUT} value={s.price ?? ""} placeholder={t("tarot.priceOnRequest")}
                   onChange={(e) => setS({ ...s, price: e.target.value === "" ? null : Number(e.target.value) })} />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className={LABEL}>{t("adminTarot.tag")}</span>
-                <input className={INPUT} value={s.tag} maxLength={30} onChange={(e) => setS({ ...s, tag: e.target.value })} />
               </label>
               <fieldset className="flex flex-col gap-2 sm:col-span-2">
                 <legend className={`${LABEL} mb-1`}>{t("adminTarot.channels")}</legend>
@@ -112,13 +101,6 @@ export default function AdminTarotPage() {
             </div>
           )}
         />
-      </Section>
-    ),
-    areas: (
-      <Section title={t("adminTarot.areas")} hint={t("adminTarot.areasHint")} {...lay("areas")}>
-        {text("areas_title", t("adminHome.heading"), 120)}
-        {text("areas_subtitle", t("adminTarot.subtitle"), 300, true)}
-        {text("areas_note", t("adminTarot.note"), 500, true)}
       </Section>
     ),
     modalities: (

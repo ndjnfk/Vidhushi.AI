@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { sectionOrder, type HomeSection } from "@/lib/useHomeContent";
+import { HOME_SECTIONS, sectionOrder, type HomeSection } from "@/lib/useHomeContent";
 import { getHomeContent, saveHomeLayout } from "../_lib/api";
 
 // Show/hide + up/down controls for the home page sections, shared by the
@@ -19,7 +19,8 @@ export function useHomeLayout() {
 
   useEffect(() => {
     getHomeContent()
-      .then((c) => setLayout({ hidden: c.hidden_sections ?? [], order: sectionOrder(c) }))
+      // Drop sections that no longer exist (e.g. saved before one was removed).
+      .then((c) => setLayout({ hidden: (c.hidden_sections ?? []).filter((s) => HOME_SECTIONS.includes(s)), order: sectionOrder(c) }))
       .catch(() => setLayout({ hidden: [], order: sectionOrder(null) }));
   }, []);
 

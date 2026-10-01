@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { DEFAULT_LOCALE } from "@/lib/i18n/languages";
 import en from "@/lib/i18n/dictionaries/en";
 import hi from "@/lib/i18n/dictionaries/hi";
@@ -24,19 +24,10 @@ const LanguageContext = createContext<LanguageContextValue>({
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  // Defaults to English on both server and first client render (avoids a
-  // hydration mismatch); the stored preference is applied after mount,
-  // same tradeoff lib/auth.ts already accepts for the token.
+  // The site shows English only: the language picker was removed, so a
+  // language chosen earlier (still in localStorage) is ignored — visitors
+  // who once picked Hindi would otherwise be stuck with no way back.
   const [locale, setLocaleState] = useState(DEFAULT_LOCALE);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored && DICTIONARIES[stored]) setLocaleState(stored);
-    } catch {
-      // ignore
-    }
-  }, []);
 
   function setLocale(next: string) {
     setLocaleState(next);

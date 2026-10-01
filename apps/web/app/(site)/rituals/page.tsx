@@ -171,7 +171,7 @@ export default function RitualsPage() {
           <p className="font-display text-[clamp(1.3rem,2.2vw,1.8rem)] uppercase leading-snug tracking-[0.04em] text-cream">
             {t("tarot.heroTagline")}
           </p>
-          <Link href="/#sessions" className={`${OUTLINE_BTN} shrink-0`}>
+          <Link href="/pricing" className={`${OUTLINE_BTN} shrink-0`}>
             <Sparkle className="h-3.5 w-3.5 text-gold" />
             {t("tarot.heroTitle")}
           </Link>

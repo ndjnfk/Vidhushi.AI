@@ -71,7 +71,7 @@ async def test_layout_hide_and_reorder():
     saved = await admin_home.update_layout(HomeLayoutIn(hidden_sections=["stats", "rates", "stats"],
                                                         section_order=["reviews", "hero"]))
     assert saved.hidden_sections == ["stats", "rates"]
-    assert saved.section_order[:3] == ["reviews", "hero", "about"] and len(saved.section_order) == 10
+    assert saved.section_order[:3] == ["reviews", "hero", "about"] and len(saved.section_order) == 9
     # Saving the content keeps the layout.
     await admin_home.update_home(HomeContentIn(hero_title="Hi"))
     pub = await home.public_home()

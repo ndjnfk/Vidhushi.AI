@@ -56,7 +56,7 @@ export function AboutArt() {
       >
         {home?.about_image1_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={home.about_image1_url} alt="" className="h-full w-full object-cover" />
+          <img src={home.about_image1_url} alt="Vidushi Ji, Vedic astrologer and tarot reader" className="h-full w-full object-cover" />
         ) : (
           <ArchScene />
         )}
@@ -66,7 +66,7 @@ export function AboutArt() {
         style={{ clipPath: "polygon(0 8%, 100% 0, 100% 100%, 0 92%)" }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={home?.about_image2_url || home?.hero_image_url || "/home/hero.jpg"} alt="" className="h-full w-full object-cover" />
+        <img src={home?.about_image2_url || home?.hero_image_url || "/home/hero.jpg"} alt="Vedic astrology and tarot consultation with Vidushi Ji" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-ink/20" />
       </div>
       <div className="absolute left-[37%] top-[40%] flex w-[29%] flex-col items-center justify-center border border-gold/40 bg-ink-soft px-3 py-7 text-center shadow-2xl">

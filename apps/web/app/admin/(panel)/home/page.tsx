@@ -16,7 +16,7 @@ const BTN = "inline-flex items-center justify-center gap-2 px-5 py-3 text-[12px]
 const newReviewSlot = () => `review-${Math.random().toString(36).slice(2, 10)}`;
 
 // The tarot sections are shown, hidden and reordered on the Tarot sessions page.
-const PAGE_SECTIONS = HOME_SECTIONS.filter((s) => !["sessions", "areas", "modalities", "how"].includes(s));
+const PAGE_SECTIONS = HOME_SECTIONS.filter((s) => !["areas", "modalities", "how"].includes(s));
 
 function Text({ label, value, onChange, placeholder, area, max }: {
   label: string; value: string; onChange: (v: string) => void; placeholder: string; area?: boolean; max: number;

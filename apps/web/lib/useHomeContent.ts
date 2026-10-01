@@ -24,7 +24,7 @@ export interface RateItem {
 
 // Home page sections the admin can switch off, in page order.
 // Must match HOME_SECTIONS in apps/api/app/schemas/schemas.py.
-export const HOME_SECTIONS = ["hero", "about", "rates", "sessions", "areas", "modalities", "how", "bracelets", "stats", "reviews"] as const;
+export const HOME_SECTIONS = ["hero", "about", "rates", "bracelets", "stats", "areas", "modalities", "how", "reviews"] as const;
 export type HomeSection = (typeof HOME_SECTIONS)[number];
 
 // Home page content edited in the admin panel ("Home page"). Empty text
