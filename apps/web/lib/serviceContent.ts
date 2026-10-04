@@ -196,6 +196,30 @@ For astrology consultations, keep your exact birth date, birth time and birth pl
 
 export const ABOUT: ServiceContent = {
   markdown: `
+## About Vidushi Sharma — Tarot Reader, Healer & Occult Practitioner
+
+I'm **Vidushi Sharma**, a professional **Tarot Reader, Healer and Occult Practitioner** offering **online tarot readings and spiritual guidance across India** since 2020.
+
+### Experience you can trust
+
+- Guided **5,000+ clients** through personal tarot consultations
+- Supported **2,000+ people** with healing work
+- Taught **1,500+ students** through tarot and occult courses
+
+### 7 divination modalities, one personalised reading
+
+I work with **7 different divination modalities**, including **Tarot, Dice, Runes, Domino, Cartomancy** and other intuitive practices. Using them together, I look at your situation from several angles, so the guidance fits your own questions and circumstances. It's never a one-size-fits-all prediction.
+
+### Guidance for love, career, health and life decisions
+
+Bring your questions to me about love and relationships, career and business, finances, health or any life decision. I'll bring everything I have to help you find the answers. I use my knowledge, experience, intuition and multiple modalities together to help you gain clarity, insight and perspective.
+
+### My purpose
+
+My purpose is not simply to tell you what may happen. It is to help you **understand your situation, recognise your possibilities and move forward with clarity and confidence**.
+
+**You bring the questions. I'll bring everything I have.** [Book a tarot reading](/pricing).
+
 ## What Vidushi Ji offers
 
 - **Free Kundli** — an accurate Vedic birth chart with Navamsa, Vimshottari Dasha, Panchang and a plain-language dosha check. [Generate yours](/kundli).
@@ -220,7 +244,15 @@ Have a question before you book? [Contact Vidushi Ji](/contact) or read the [ast
   faqs: [
     {
       q: "Who is Vidushi Ji?",
-      a: "Vidushi Ji is a Vedic astrologer and tarot reader. Through this website she offers free Kundli and Guna Milan tools, personal consultations by chat, audio or video, tarot sessions, healing rituals and energised healing bracelets.",
+      a: "Vidushi Ji (Vidushi Sharma) is a professional tarot reader, healer and occult practitioner working since 2020. She has guided 5,000+ clients, supported 2,000+ people through healing work and taught 1,500+ students. Through this website she offers personal consultations by chat, audio or video, tarot sessions, healing rituals, energised healing bracelets and free Kundli and Guna Milan tools.",
+    },
+    {
+      q: "Which divination methods does Vidushi Sharma use?",
+      a: "She works with 7 divination modalities, including Tarot, Dice, Runes, Domino and Cartomancy, and combines them to look at your question from different perspectives for a personalised reading.",
+    },
+    {
+      q: "Does Vidushi Sharma offer tarot readings online?",
+      a: "Yes. Tarot readings and consultations are available online by chat, audio or video call for clients anywhere in India and abroad.",
     },
     {
       q: "Which system of astrology does Vidushi Ji follow?",

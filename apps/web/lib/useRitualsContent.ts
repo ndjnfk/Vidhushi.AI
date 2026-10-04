@@ -9,6 +9,8 @@ import { RITUAL_INTENTIONS } from "@/lib/offerings";
 export interface RitualIntentionItem {
   id: string; // links use it (?book=ritual:<id>)
   name: string;
+  price?: number | null; // rupees; null = no price shown
+  price_usd?: number | null; // optional, shown next to the rupee price
 }
 
 // Rituals page content, edited in the admin panel ("Rituals page").

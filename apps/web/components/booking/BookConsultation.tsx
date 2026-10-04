@@ -222,7 +222,7 @@ function BookingModal({ preset, onClose }: { preset: BookingPreset; onClose: () 
                       setForm((f) => ({ ...f, intention, topic: ritualTopic(intention) }));
                     }}>
                     {intentions.map((i) => (
-                      <option key={i.id} value={i.id}>{i.name}</option>
+                      <option key={i.id} value={i.id}>{i.price != null ? `${i.name} — ${formatInrUsd(i.price, i.price_usd)}` : i.name}</option>
                     ))}
                   </select>
                 </label>

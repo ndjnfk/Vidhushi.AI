@@ -24,7 +24,7 @@ const greatVibes = Great_Vibes({ variable: "--font-great-vibes", subsets: ["lati
 // (see lib/seo.tsx). No canonical here, or every page would inherit "/".
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: `${SITE_NAME} — Vedic Astrology & Tarot`, template: `%s | ${SITE_NAME}` },
+  title: { default: `${SITE_NAME} — Online Tarot Reading & Healing`, template: `%s | ${SITE_NAME}` },
   description: DEFAULT_DESCRIPTION,
   applicationName: SITE_NAME,
   openGraph: { siteName: SITE_NAME, type: "website", locale: "en_IN" },

@@ -10,6 +10,7 @@ import Sparkle from "@/components/Sparkle";
 import Starfield from "@/components/Starfield";
 import { listRituals, type RitualServiceOut } from "@/lib/rituals";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { formatInrUsd } from "@/lib/offerings";
 import { useRitualsContent } from "@/lib/useRitualsContent";
 
 const PRIMARY_BTN =
@@ -85,8 +86,13 @@ export default function RitualsPage() {
                 className="group flex h-full w-full items-center gap-5 border border-line bg-ink-soft/80 px-6 py-6 text-left transition-colors hover:border-gold/60"
               >
                 <span className="font-display text-sm text-cream/40">{String(n + 1).padStart(2, "0")}</span>
-                <span className="flex-1 font-display text-[1.15rem] uppercase leading-snug tracking-[0.04em] text-cream transition-colors group-hover:text-gold">
-                  {i.name}
+                <span className="flex-1">
+                  <span className="block font-display text-[1.15rem] uppercase leading-snug tracking-[0.04em] text-cream transition-colors group-hover:text-gold">
+                    {i.name}
+                  </span>
+                  {i.price != null && (
+                    <span className="mt-1.5 block tabular-nums text-gold">{formatInrUsd(i.price, i.price_usd)}</span>
+                  )}
                 </span>
                 <Sparkle className="h-3.5 w-3.5 shrink-0 text-gold transition-transform duration-500 group-hover:rotate-90" />
               </BookConsultationButton>

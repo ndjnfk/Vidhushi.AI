@@ -239,7 +239,7 @@ export default function BlogEditorPage() {
           <aside className="flex flex-col gap-8">
             <section className="flex flex-col gap-3">
               <span className={LABEL}>Cover image</span>
-              <div className="flex aspect-[16/10] items-center justify-center overflow-hidden border border-dashed border-cream/25 bg-ink-soft">
+              <div className="flex aspect-[1200/630] items-center justify-center overflow-hidden border border-dashed border-cream/25 bg-ink-soft">
                 {f.cover_image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={f.cover_image_url} alt="" className="h-full w-full object-cover" />
@@ -258,7 +258,7 @@ export default function BlogEditorPage() {
               </div>
               <input className={INPUT} value={f.cover_image_alt} onChange={(e) => set("cover_image_alt", e.target.value)} maxLength={150}
                 placeholder="Alt text: describe the image" />
-              <span className="text-xs text-cream/50">PNG, JPEG or WebP, up to 3 MB. Wide (16:10) works best.</span>
+              <span className="text-xs text-cream/50">PNG, JPEG or WebP, up to 3 MB. Best size: 1200 × 630 px — also used as the share image.</span>
             </section>
 
             <section className="flex flex-col gap-3">

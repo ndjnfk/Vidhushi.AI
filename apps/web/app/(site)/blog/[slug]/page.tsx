@@ -96,7 +96,7 @@ export default async function BlogPostPage({ params }: Props) {
 
         {post.cover_image_url && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={post.cover_image_url} alt={post.cover_image_alt || post.title} className="mt-10 aspect-[16/9] w-full border border-line object-cover" />
+          <img src={post.cover_image_url} alt={post.cover_image_alt || post.title} className="mt-10 aspect-[1200/630] w-full border border-line object-cover" />
         )}
 
         <div className="mt-10">

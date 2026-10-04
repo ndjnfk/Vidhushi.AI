@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://vidushiji.com").replace(/\/$/, "");
 export const SITE_NAME = "Vidushi Ji";
 export const DEFAULT_DESCRIPTION =
-  "Vedic astrology and tarot by Vidushi Ji — free Kundli, Guna Milan matching, tarot readings, healing rituals and energised healing bracelets.";
+  "Online tarot reading by Vidushi Sharma — guidance on love, career, health and life decisions by chat, audio or video. Plus healing rituals and bracelets.";
 
 // Per-route metadata: title, description, canonical and Open Graph in one go.
 // The " | Vidushi Ji" suffix is added here rather than via the root layout's
@@ -54,10 +54,11 @@ export const SITE_SCHEMA = {
     {
       "@type": "Person",
       "@id": `${SITE_URL}/#person`,
-      name: SITE_NAME,
-      url: SITE_URL,
-      jobTitle: "Vedic Astrologer & Tarot Reader",
-      knowsAbout: ["Vedic astrology", "Kundli", "Guna Milan", "Tarot reading", "Healing rituals"],
+      name: "Vidushi Sharma",
+      alternateName: SITE_NAME,
+      url: `${SITE_URL}/about`,
+      jobTitle: "Tarot Reader, Healer & Occult Practitioner",
+      knowsAbout: ["Tarot reading", "Runes", "Cartomancy", "Dice divination", "Domino divination", "Energy healing", "Occult practices", "Healing rituals", "Vedic astrology", "Kundli", "Guna Milan"],
     },
     {
       "@type": "ProfessionalService",

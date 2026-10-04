@@ -466,9 +466,9 @@ const en: Record<string, string> = {
   "about.servicePanchang": "Daily Panchang",
   "about.serviceBracelets": "Healing Bracelets",
   "about.pageTitle": "About Us",
-  "about.storyTitle": "Our story",
-  "about.story1": "Vidushi Ji brings Vedic astrology and tarot together to help people understand what is happening in their lives and what to do next. Every reading starts from your own birth chart or cards — calculated precisely and read with care — rather than from generic predictions.",
-  "about.story2": "Through this website you can generate your free Kundli, check Guna Milan before marriage, book a personal consultation by chat, audio or video, enquire about healing rituals and order energised healing bracelets — all in one place, explained in simple language.",
+  "about.storyTitle": "Meet Vidushi Sharma",
+  "about.story1": "I'm Vidushi Sharma, a professional Tarot Reader, Healer and Occult Practitioner, offering online tarot readings and spiritual guidance across India since 2020. Over the years, I have guided 5,000+ clients, supported 2,000+ people through healing work and taught 1,500+ students about Tarot and Occult practices.",
+  "about.story2": "I work with 7 different divination modalities, including Tarot, Dice, Runes, Domino and Cartomancy, and bring them together to look at your situation from different perspectives. You bring the questions. I'll bring everything I have.",
   "about.valueTraditionTitle": "Tradition",
   "about.valueTraditionBody": "Rooted in classical Vedic texts and the sidereal (Lahiri) system used by Indian astrologers for centuries.",
   "about.valuePrecisionTitle": "Precision",
@@ -545,7 +545,7 @@ const en: Record<string, string> = {
   "matching.computing": "Calculating...",
 
 
-  "tarot.heroTitle": "Tarot Reading by Vidushi",
+  "tarot.heroTitle": "Online Tarot Reading by Vidushi Sharma",
   "tarot.heroTagline": "Gain Clarity. Find Insight. Explore a Deeper Perspective.",
   "tarot.heroIntro": "Tarot Reading by Vidushi helps you gain clarity, insight, and a deeper perspective on the questions that matter to you.",
   "tarot.heroIntro2": "I offer personalized one-on-one tarot sessions across India, designed around your individual questions, circumstances, and areas of concern.",

@@ -4,10 +4,11 @@ import T from "@/components/T";
 import { formatPostDate, publishedDate, type BlogPostSummaryOut } from "@/lib/blog";
 
 // One article in the blog grid. `featured` is the wide first card.
+// Covers use the 1200x630 share-image ratio, so a standard cover is never cropped.
 export default function PostCard({ post, featured = false }: { post: BlogPostSummaryOut; featured?: boolean }) {
   return (
     <article className={`group relative flex flex-col border border-line bg-ink/85 backdrop-blur-sm transition-colors hover:border-gold/60 ${featured ? "md:col-span-2 md:flex-row" : ""}`}>
-      <div className={`relative overflow-hidden bg-ink-soft ${featured ? "aspect-[16/10] md:aspect-auto md:w-[55%]" : "aspect-[16/10]"}`}>
+      <div className={`relative overflow-hidden bg-ink-soft aspect-[1200/630] ${featured ? "md:w-[55%] md:self-center" : ""}`}>
         {post.cover_image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={post.cover_image_url} alt={post.cover_image_alt || post.title} loading="lazy"

@@ -592,6 +592,8 @@ class TarotStep(BaseModel):
 class RitualIntentionItem(BaseModel):
     id: str  # stable; links use it (?book=ritual:<id>)
     name: str
+    price: int | None = None  # rupees; None = no price shown
+    price_usd: int | None = None  # optional, shown next to the rupee price
 
 
 class RitualsContent(Document):

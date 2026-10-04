@@ -1017,6 +1017,8 @@ class ReviewHiddenIn(BaseModel):
 class RitualIntentionIn(BaseModel):
     id: str = Field(pattern=r"^[a-z0-9-]{1,40}$")
     name: str = Field(min_length=1, max_length=80)
+    price: int | None = Field(default=None, ge=0, le=10_000_000)
+    price_usd: int | None = Field(default=None, ge=0, le=10_000_000)
 
 
 class RitualsContentIn(BaseModel):

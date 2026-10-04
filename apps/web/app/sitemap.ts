@@ -3,8 +3,9 @@ import type { BlogPostSummaryOut } from "@/lib/blog";
 import type { RitualServiceOut } from "@/lib/rituals";
 import { SITE_URL, fetchPublic } from "@/lib/seo";
 
-// Rebuilt hourly so new blog posts and rituals show up without a deploy.
-export const revalidate = 3600;
+// Rebuilt once a week (7 days), so new blog posts and rituals are added
+// without a deploy.
+export const revalidate = 604800;
 
 const STATIC: [path: string, priority: number][] = [
   ["/", 1],
@@ -21,8 +22,8 @@ const STATIC: [path: string, priority: number][] = [
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [posts, rituals] = await Promise.all([
-    fetchPublic<BlogPostSummaryOut[]>("/blog"),
-    fetchPublic<RitualServiceOut[]>("/rituals"),
+    fetchPublic<BlogPostSummaryOut[]>("/blog", revalidate),
+    fetchPublic<RitualServiceOut[]>("/rituals", revalidate),
   ]);
 
   return [

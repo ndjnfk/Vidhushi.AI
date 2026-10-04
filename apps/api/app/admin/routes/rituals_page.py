@@ -31,7 +31,7 @@ async def update_page(payload: RitualsContentIn):
     for field in TEXT_FIELDS:
         setattr(c, field, getattr(payload, field).strip())
     c.hero_image_url = _own_image(payload.hero_image_url)
-    c.intentions = [RitualIntentionItem(id=i.id, name=i.name.strip()) for i in payload.intentions]
+    c.intentions = [RitualIntentionItem(id=i.id, name=i.name.strip(), price=i.price, price_usd=i.price_usd) for i in payload.intentions]
     c.steps = [s.strip() for s in payload.steps if s.strip()]
     c.updated_at = datetime.utcnow()
     if c.id:

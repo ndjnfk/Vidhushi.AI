@@ -70,7 +70,7 @@ const CALL_MINUTES: Record<string, number> = { "call-15": 15, "call-30": 30, "ca
 export function defaultTarotContent(t: (k: string) => string): TarotContent {
   return {
     tagline: t("tarot.heroTagline"),
-    badges: [t("tarot.badgeOneOnOne"), t("tarot.badgeIndia"), t("tarot.badgeModalities")],
+    badges: [t("tarot.badgeOneOnOne"), t("tarot.badgeIndia")],
     sessions_title: t("tarot.sessionsTitle"),
     sessions_subtitle: t("tarot.sessionsSubtitle"),
     sessions: TAROT_SESSIONS.map((s) => {

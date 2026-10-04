@@ -73,10 +73,16 @@ export default function AdminRitualsPageEditor() {
           <ListEditor<RitualIntentionItem>
             label={t("adminRituals.intentions")} items={c.intentions} defaults={d.intentions} max={30}
             addLabel={t("adminRituals.addIntention")} onChange={(intentions) => set({ intentions })}
-            blank={() => ({ id: newId(), name: "" })}
+            blank={() => ({ id: newId(), name: "", price: null, price_usd: null })}
             render={(i, update) => (
-              <input className={INPUT} value={i.name} maxLength={80} required placeholder={t("adminTarot.name")}
-                onChange={(e) => update({ ...i, name: e.target.value })} />
+              <div className="grid gap-3 sm:grid-cols-[1fr_130px_130px]">
+                <input className={INPUT} value={i.name} maxLength={80} required placeholder={t("adminTarot.name")} aria-label={t("adminTarot.name")}
+                  onChange={(e) => update({ ...i, name: e.target.value })} />
+                <input type="number" min={0} max={10000000} className={INPUT} value={i.price ?? ""} placeholder={t("adminHome.ratePrice")} aria-label={t("adminHome.ratePrice")}
+                  onChange={(e) => update({ ...i, price: e.target.value === "" ? null : Number(e.target.value) })} />
+                <input type="number" min={0} max={10000000} className={INPUT} value={i.price_usd ?? ""} placeholder={t("adminHome.ratePriceUsd")} aria-label={t("adminHome.ratePriceUsd")}
+                  onChange={(e) => update({ ...i, price_usd: e.target.value === "" ? null : Number(e.target.value) })} />
+              </div>
             )}
           />
         </Section>

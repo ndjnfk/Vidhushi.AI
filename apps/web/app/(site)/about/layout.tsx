@@ -4,8 +4,8 @@ import { ABOUT } from "@/lib/serviceContent";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata(
-  "About Us — Vedic Astrologer & Tarot Reader",
-  "Meet Vidushi Ji — Vedic astrologer and tarot reader. Our story, values and the astrology, tarot and healing services we offer.",
+  "Vidushi Sharma — Tarot Reader & Healer in India",
+  "Online tarot reading, energy healing and occult guidance by Vidushi Sharma since 2020. 5,000+ clients guided, 1,500+ students taught. Book your session today.",
   "/about",
 );
 
