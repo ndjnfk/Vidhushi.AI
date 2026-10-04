@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import Sparkle from "@/components/Sparkle";
 import { useCart } from "@/lib/CartContext";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { formatPrice, isOnSale, type ProductOut } from "@/lib/shop";
+import { formatPrice, formatUsdPrice, isOnSale, isOnSaleUsd, type ProductOut } from "@/lib/shop";
 import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
 
 // Full product details: photo, price and the complete description.
@@ -55,6 +55,12 @@ export default function ProductDetailModal({ product, onClose }: { product: Prod
               {isOnSale(product) && <s className="text-lg text-cream/55">{formatPrice(product.compare_at_price!)}</s>}
               <span>{formatPrice(product.price)}</span>
             </p>
+            {product.price_usd != null && (
+              <p className="mt-1 flex items-baseline gap-4 text-lg text-cream/75">
+                {isOnSaleUsd(product) && <s className="text-base text-cream/50">{formatUsdPrice(product.compare_at_price_usd!)}</s>}
+                <span>{formatUsdPrice(product.price_usd)}</span>
+              </p>
+            )}
             {product.description && (
               <p className="mt-6 whitespace-pre-line leading-[1.8] text-cream/85">{product.description}</p>
             )}

@@ -46,3 +46,16 @@ async def test_validation():
     with pytest.raises(HTTPException) as e:
         await shop.product_image(p.id)
     assert e.value.status_code == 404
+
+
+async def test_dollar_prices():
+    p = await admin_products.create_product(ProductCreate(
+        name="Tiger Eye", price=1299, compare_at_price=1599, price_usd=15, compare_at_price_usd=19,
+    ))
+    [listed] = await shop.list_products(category="bracelet")
+    assert (listed.price, listed.price_usd, listed.compare_at_price_usd) == (1299, 15, 19)
+
+    edited = await admin_products.update_product(p.id, ProductUpdate(price_usd=14.5))
+    assert edited.price_usd == 14.5 and edited.price == 1299
+    with pytest.raises(HTTPException):  # dollar sale price must also be below the dollar original
+        await admin_products.update_product(p.id, ProductUpdate(price_usd=25))

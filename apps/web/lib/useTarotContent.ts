@@ -18,6 +18,7 @@ export interface TarotSessionItem {
   name: string;
   description: string;
   price: number | null; // null = price on request
+  price_usd?: number | null; // optional, shown next to the rupee price
   tag: string;
   channels: Channel[];
 }

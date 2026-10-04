@@ -110,7 +110,7 @@ export default function PaymentButton({ order, onSuccess, onError, className }: 
       disabled={busy}
       className={className ?? "bg-orange-600 text-white rounded px-5 py-2.5 disabled:opacity-50"}
     >
-      {busy ? "Processing..." : `Pay ₹${order.amount.toFixed(2)}`}
+      {busy ? "Processing..." : `Pay ${new Intl.NumberFormat("en-US", { style: "currency", currency: order.currency || "USD" }).format(order.amount)}`}
     </button>
   );
 }

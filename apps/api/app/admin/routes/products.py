@@ -18,7 +18,8 @@ MAX_IMAGE_BYTES = 3 * 1024 * 1024
 def product_out(p: Product) -> ProductOut:
     return ProductOut(
         id=str(p.id), name=p.name, description=p.description, price=p.price,
-        compare_at_price=p.compare_at_price, image_url=p.image_url, category=p.category,
+        compare_at_price=p.compare_at_price, price_usd=p.price_usd, compare_at_price_usd=p.compare_at_price_usd,
+        image_url=p.image_url, category=p.category,
         stock_quantity=p.stock_quantity, is_active=p.is_active,
     )
 
@@ -33,8 +34,8 @@ async def _get(product_id: str) -> Product:
     return p
 
 
-def _check_prices(price: float, compare_at: float | None) -> None:
-    if compare_at is not None and compare_at <= price:
+def _check_prices(price: float | None, compare_at: float | None) -> None:
+    if price is not None and compare_at is not None and compare_at <= price:
         raise HTTPException(status_code=422, detail="The original (struck-through) price must be higher than the selling price")
 
 
@@ -46,6 +47,7 @@ async def list_products():
 @router.post("", response_model=ProductOut)
 async def create_product(payload: ProductCreate):
     _check_prices(payload.price, payload.compare_at_price)
+    _check_prices(payload.price_usd, payload.compare_at_price_usd)
     product = Product(**payload.model_dump())
     await product.insert()
     await bump(PRODUCTS)
@@ -57,6 +59,7 @@ async def update_product(product_id: str, payload: ProductUpdate):
     product = await _get(product_id)
     changes = payload.model_dump(exclude_unset=True)
     _check_prices(changes.get("price", product.price), changes.get("compare_at_price", product.compare_at_price))
+    _check_prices(changes.get("price_usd", product.price_usd), changes.get("compare_at_price_usd", product.compare_at_price_usd))
     for field, value in changes.items():
         setattr(product, field, value)
     await product.save()

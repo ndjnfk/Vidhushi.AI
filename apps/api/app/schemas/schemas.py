@@ -514,6 +514,8 @@ class ProductCreate(BaseModel):
     description: str = Field(default="", max_length=5000)
     price: float = Field(ge=0)
     compare_at_price: float | None = Field(default=None, ge=0)
+    price_usd: float | None = Field(default=None, ge=0)
+    compare_at_price_usd: float | None = Field(default=None, ge=0)
     image_url: str | None = None
     category: str = Field(default="bracelet", pattern=PRODUCT_CATEGORIES)
     stock_quantity: int = Field(default=0, ge=0)
@@ -525,6 +527,8 @@ class ProductUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=5000)
     price: float | None = Field(default=None, ge=0)
     compare_at_price: float | None = Field(default=None, ge=0)
+    price_usd: float | None = Field(default=None, ge=0)
+    compare_at_price_usd: float | None = Field(default=None, ge=0)
     image_url: str | None = None
     category: str | None = Field(default=None, pattern=PRODUCT_CATEGORIES)
     stock_quantity: int | None = Field(default=None, ge=0)
@@ -537,6 +541,8 @@ class ProductOut(BaseModel):
     description: str
     price: float
     compare_at_price: float | None = None
+    price_usd: float | None = None
+    compare_at_price_usd: float | None = None
     image_url: str | None
     category: str
     stock_quantity: int
@@ -864,6 +870,7 @@ class ValueCardIn(BaseModel):
 class RateItemIn(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     price: int | None = Field(default=None, ge=0, le=10_000_000)
+    price_usd: int | None = Field(default=None, ge=0, le=10_000_000)
 
 
 # Built-in order of the home page sections.
@@ -922,6 +929,7 @@ class TarotSessionIn(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     description: str = Field(default="", max_length=500)
     price: int | None = Field(default=None, ge=0, le=10_000_000)
+    price_usd: int | None = Field(default=None, ge=0, le=10_000_000)
     tag: str = Field(default="", max_length=30)
     channels: list[str] = Field(default_factory=lambda: ["chat", "audio", "video"], min_length=1, max_length=3)
 

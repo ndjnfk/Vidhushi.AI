@@ -5,7 +5,7 @@ import SectionHeading from "@/components/SectionHeading";
 import Sparkle from "@/components/Sparkle";
 import Starfield from "@/components/Starfield";
 import OfferingIcon from "@/components/tarot/OfferingIcon";
-import { formatInr } from "@/lib/offerings";
+import { formatInrUsd } from "@/lib/offerings";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useTarotContent } from "@/lib/useTarotContent";
 
@@ -36,7 +36,7 @@ export function TarotAreas() {
               </span>
               <h3 className="mt-6 font-display text-[1.45rem] uppercase tracking-[0.04em] text-gold">{s.name}</h3>
               <p className="mt-4 flex-1 leading-relaxed text-cream/75">{s.description}</p>
-              {s.price !== null && <p className="mt-5 font-display text-2xl text-cream">{formatInr(s.price)}</p>}
+              {s.price !== null && <p className="mt-5 font-display text-2xl text-cream">{formatInrUsd(s.price, s.price_usd)}</p>}
             </article>
           ))}
         </div>

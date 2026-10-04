@@ -36,7 +36,8 @@ router = APIRouter(prefix="/shop", tags=["shop"])
 def _product_out(p: Product) -> ProductOut:
     return ProductOut(
         id=str(p.id), name=p.name, description=p.description, price=p.price,
-        compare_at_price=p.compare_at_price, image_url=p.image_url, category=p.category, stock_quantity=p.stock_quantity,
+        compare_at_price=p.compare_at_price, price_usd=p.price_usd, compare_at_price_usd=p.compare_at_price_usd,
+        image_url=p.image_url, category=p.category, stock_quantity=p.stock_quantity,
     )
 
 

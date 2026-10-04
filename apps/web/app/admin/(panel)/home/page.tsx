@@ -116,11 +116,13 @@ export default function AdminHomePage() {
           </div>
           <div className="flex flex-col gap-3">
             {c.rates.map((r, i) => (
-              <div key={i} className="grid gap-3 sm:grid-cols-[1fr_160px_auto] sm:items-center">
+              <div key={i} className="grid gap-3 sm:grid-cols-[1fr_130px_130px_auto] sm:items-center">
                 <input className={INPUT} value={r.name} maxLength={80} required placeholder={t("adminHome.rateName")} aria-label={t("adminHome.rateName")}
                   onChange={(e) => setRate(i, { name: e.target.value })} />
                 <input type="number" min={0} className={INPUT} value={r.price ?? ""} placeholder={t("tarot.priceOnRequest")} aria-label={t("adminHome.ratePrice")}
                   onChange={(e) => setRate(i, { price: e.target.value === "" ? null : Number(e.target.value) })} />
+                <input type="number" min={0} className={INPUT} value={r.price_usd ?? ""} placeholder={t("adminHome.ratePriceUsd")} aria-label={t("adminHome.ratePriceUsd")}
+                  onChange={(e) => setRate(i, { price_usd: e.target.value === "" ? null : Number(e.target.value) })} />
                 <div className="flex gap-2">
                   <button type="button" onClick={() => moveRate(i, -1)} disabled={i === 0} aria-label="Move up"
                     className={`${BTN} border border-line px-3 text-cream/60 hover:border-gold hover:text-gold`}>↑</button>
@@ -132,7 +134,7 @@ export default function AdminHomePage() {
               </div>
             ))}
             {c.rates.length < 40 && (
-              <button type="button" onClick={() => set({ rates: [...c.rates, { name: "", price: c.rates.at(-1)?.price ?? null }] })}
+              <button type="button" onClick={() => set({ rates: [...c.rates, { name: "", price: c.rates.at(-1)?.price ?? null, price_usd: c.rates.at(-1)?.price_usd ?? null }] })}
                 className={`${BTN} self-start border border-cream/40 hover:border-gold hover:text-gold`}>+ {t("adminHome.addRate")}</button>
             )}
           </div>

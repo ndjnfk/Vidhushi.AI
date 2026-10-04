@@ -10,7 +10,7 @@ import { isLoggedIn } from "@/lib/auth";
 import { createBooking, type ConsultationRequestOut, type Topic } from "@/lib/bookings";
 import en from "@/lib/i18n/dictionaries/en";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { formatInr } from "@/lib/offerings";
+import { formatInrUsd } from "@/lib/offerings";
 import { useHomeContent } from "@/lib/useHomeContent";
 import { useRitualsContent } from "@/lib/useRitualsContent";
 import { useTarotContent, type TarotSessionItem } from "@/lib/useTarotContent";
@@ -51,8 +51,8 @@ function ritualTopic(i: string): Topic {
   return i === "love" ? "love" : i === "career" ? "career" : "other";
 }
 
-function sessionLabel(s: Pick<TarotSessionItem, "name" | "price">, t: (k: string) => string): string {
-  return `${s.name} — ${s.price === null ? t("tarot.priceOnRequest") : formatInr(s.price)}`;
+function sessionLabel(s: Pick<TarotSessionItem, "name" | "price" | "price_usd">, t: (k: string) => string): string {
+  return `${s.name} — ${s.price === null ? t("tarot.priceOnRequest") : formatInrUsd(s.price, s.price_usd)}`;
 }
 
 function today(): string {
@@ -67,9 +67,9 @@ function BookingModal({ preset, onClose }: { preset: BookingPreset; onClose: () 
   // empty does the form fall back to the tarot sessions.
   const { sessions } = useTarotContent();
   const home = useHomeContent();
-  const rates = (home?.rates ?? []).map((r, i) => ({ id: `rate-${i}`, name: r.name, price: r.price }));
+  const rates = (home?.rates ?? []).map((r, i) => ({ id: `rate-${i}`, name: r.name, price: r.price, price_usd: r.price_usd }));
   const useRates = rates.length > 0;
-  const options: { id: string; name: string; price: number | null }[] = useRates ? rates : sessions;
+  const options: { id: string; name: string; price: number | null; price_usd?: number | null }[] = useRates ? rates : sessions;
   const initialSession = preset.kind === "tarot"
     ? (options.find((x) => x.id === preset.session) ?? options[0])?.id ?? ""
     : "";

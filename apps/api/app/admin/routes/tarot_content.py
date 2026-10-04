@@ -34,7 +34,7 @@ async def update_tarot(payload: TarotContentIn):
     c.sessions_title, c.sessions_subtitle = payload.sessions_title.strip(), payload.sessions_subtitle.strip()
     c.sessions = [
         TarotSession(id=s.id, group=s.group, name=s.name.strip(), description=s.description.strip(),
-                     price=s.price, tag=s.tag.strip(), channels=s.channels)
+                     price=s.price, price_usd=s.price_usd, tag=s.tag.strip(), channels=s.channels)
         for s in payload.sessions
     ]
     c.areas_title, c.areas_subtitle = payload.areas_title.strip(), payload.areas_subtitle.strip()

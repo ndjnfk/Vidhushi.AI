@@ -20,6 +20,7 @@ export interface Testimonial {
 export interface RateItem {
   name: string;
   price: number | null; // null = "price on request"
+  price_usd?: number | null; // optional, shown next to the rupee price
 }
 
 // Home page sections the admin can switch off, in page order.

@@ -5,7 +5,7 @@ import ProductDetailModal from "@/components/shop/ProductDetailModal";
 import Sparkle from "@/components/Sparkle";
 import { useCart } from "@/lib/CartContext";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { formatPrice, isOnSale, type ProductOut } from "@/lib/shop";
+import { formatPrice, formatUsdPrice, isOnSale, isOnSaleUsd, type ProductOut } from "@/lib/shop";
 
 // One bordered cell of the product grid/slider: image with a hover
 // "Add to cart" button, optional Sale badge, gold title and price.
@@ -68,6 +68,12 @@ export default function ProductCard({ product, className = "" }: { product: Prod
         {isOnSale(product) && <s className="text-cream/60">{formatPrice(product.compare_at_price!)}</s>}
         <span>{formatPrice(product.price)}</span>
       </p>
+      {product.price_usd != null && (
+        <p className="mt-1 flex items-baseline gap-4 font-body text-base text-cream/75">
+          {isOnSaleUsd(product) && <s className="text-cream/50">{formatUsdPrice(product.compare_at_price_usd!)}</s>}
+          <span>{formatUsdPrice(product.price_usd)}</span>
+        </p>
+      )}
       {detailOpen && <ProductDetailModal product={product} onClose={closeDetail} />}
     </article>
   );

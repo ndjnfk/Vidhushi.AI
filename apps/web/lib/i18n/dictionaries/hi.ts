@@ -47,6 +47,7 @@ const hi: Record<string, string> = {
   "adminHome.optional": "वैकल्पिक",
   "adminHome.rateName": "सेवा",
   "adminHome.ratePrice": "कीमत (₹)",
+  "adminHome.ratePriceUsd": "कीमत ($)",
   "adminHome.addRate": "सेवा जोड़ें",
   "adminTarot.areasHint": "प्रेम, करियर, स्वास्थ्य और दूसरे क्षेत्रों के कार्ड। ग्राहक हर एक को बुक कर सकते हैं। कीमत खाली छोड़ने पर \"Price on request\" दिखेगा।",
   "adminTarot.areaCards": "क्षेत्र कार्ड",

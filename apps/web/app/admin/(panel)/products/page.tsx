@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Sparkle from "@/components/Sparkle";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { formatPrice, type ProductOut } from "@/lib/shop";
+import { formatPrice, formatUsdPrice, type ProductOut } from "@/lib/shop";
 import { useLockBodyScroll } from "@/lib/useLockBodyScroll";
 import { createProduct, listAdminProducts, updateProduct, uploadProductImage, type ProductIn } from "../../_lib/api";
 
@@ -31,6 +31,8 @@ function ProductForm({ product, onClose, onSaved }: { product: ProductOut | null
     description: product?.description ?? "",
     price: product ? String(product.price) : "",
     compare: product?.compare_at_price != null ? String(product.compare_at_price) : "",
+    priceUsd: product?.price_usd != null ? String(product.price_usd) : "",
+    compareUsd: product?.compare_at_price_usd != null ? String(product.compare_at_price_usd) : "",
     category: product?.category ?? "bracelet",
     stock: product ? String(product.stock_quantity) : "10",
     active: product?.is_active ?? true,
@@ -67,6 +69,8 @@ function ProductForm({ product, onClose, onSaved }: { product: ProductOut | null
       description: f.description.trim(),
       price: Number(f.price),
       compare_at_price: f.compare.trim() ? Number(f.compare) : null,
+      price_usd: f.priceUsd.trim() ? Number(f.priceUsd) : null,
+      compare_at_price_usd: f.compareUsd.trim() ? Number(f.compareUsd) : null,
       category: f.category,
       stock_quantity: Number(f.stock),
       is_active: f.active,
@@ -131,6 +135,14 @@ function ProductForm({ product, onClose, onSaved }: { product: ProductOut | null
               <label className="flex flex-col gap-1.5">
                 <span className={LABEL}>{t("adminProducts.compare")} (₹)</span>
                 <input className={INPUT} type="number" min={0} step="1" value={f.compare} onChange={set("compare")} placeholder={t("adminProducts.comparePh")} />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className={LABEL}>{t("adminProducts.price")} ($)</span>
+                <input className={INPUT} type="number" min={0} step="0.01" value={f.priceUsd} onChange={set("priceUsd")} placeholder={t("adminHome.optional")} />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className={LABEL}>{t("adminProducts.compare")} ($)</span>
+                <input className={INPUT} type="number" min={0} step="0.01" value={f.compareUsd} onChange={set("compareUsd")} placeholder={t("adminHome.optional")} />
               </label>
               <label className="flex flex-col gap-1.5">
                 <span className={LABEL}>{t("adminProducts.category")}</span>
@@ -225,6 +237,7 @@ export default function AdminProductsPage() {
                 <p className="w-32 text-right">
                   {p.compare_at_price != null && <s className="mr-2 text-sm text-cream/50">{formatPrice(p.compare_at_price)}</s>}
                   <span className="text-cream">{formatPrice(p.price)}</span>
+                  {p.price_usd != null && <span className="block text-sm text-cream/60">{formatUsdPrice(p.price_usd)}</span>}
                 </p>
                 <div className="flex gap-2">
                   <button type="button" onClick={() => setEditing(p)} className={`${BTN} border border-cream/40 hover:border-gold hover:text-gold`}>

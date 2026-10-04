@@ -45,3 +45,12 @@ export type RitualIntention = (typeof RITUAL_INTENTIONS)[number];
 export function formatInr(amount: number): string {
   return `₹${amount.toLocaleString("en-IN")}`;
 }
+
+export function formatUsd(amount: number): string {
+  return `$${amount.toLocaleString("en-US")}`;
+}
+
+// "₹1,100 · $15", or just the rupee price when no dollar price is set.
+export function formatInrUsd(inr: number, usd?: number | null): string {
+  return usd == null ? formatInr(inr) : `${formatInr(inr)} · ${formatUsd(usd)}`;
+}

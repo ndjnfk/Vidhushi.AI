@@ -51,7 +51,7 @@ async def update_home(payload: HomeContentIn):
     h.story_title, h.story_text = payload.story_title.strip(), payload.story_text.strip()
     h.values = [ValueCard(title=v.title.strip(), body=v.body.strip()) for v in payload.values]
     h.rates_title, h.rates_subtitle = payload.rates_title.strip(), payload.rates_subtitle.strip()
-    h.rates = [RateItem(name=r.name.strip(), price=r.price) for r in payload.rates]
+    h.rates = [RateItem(name=r.name.strip(), price=r.price, price_usd=r.price_usd) for r in payload.rates]
     h.updated_at = datetime.utcnow()
     if h.id:
         await h.save()

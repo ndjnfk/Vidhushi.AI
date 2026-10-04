@@ -58,7 +58,7 @@ export default function AdminTarotPage() {
         <ListEditor<TarotSessionItem>
           label={t("adminTarot.areaCards")} items={areaItems} defaults={d.sessions.filter(isArea)} max={12} addLabel={t("adminTarot.addArea")}
           onChange={(areas) => set({ sessions: [...c.sessions.filter((x) => !isArea(x)), ...areas] })}
-          blank={() => ({ id: newId(), group: "area", name: "", description: "", price: null, tag: "", channels: [...CHANNELS] })}
+          blank={() => ({ id: newId(), group: "area", name: "", description: "", price: null, price_usd: null, tag: "", channels: [...CHANNELS] })}
           render={(s, setS) => (
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex flex-col gap-1.5">
@@ -69,6 +69,11 @@ export default function AdminTarotPage() {
                 <span className={LABEL}>{t("adminTarot.price")}</span>
                 <input type="number" min={0} max={10000000} className={INPUT} value={s.price ?? ""} placeholder={t("tarot.priceOnRequest")}
                   onChange={(e) => setS({ ...s, price: e.target.value === "" ? null : Number(e.target.value) })} />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className={LABEL}>{t("adminTarot.priceUsd")}</span>
+                <input type="number" min={0} max={10000000} className={INPUT} value={s.price_usd ?? ""} placeholder={t("adminHome.optional")}
+                  onChange={(e) => setS({ ...s, price_usd: e.target.value === "" ? null : Number(e.target.value) })} />
               </label>
               <fieldset className="flex flex-col gap-2 sm:col-span-2">
                 <legend className={`${LABEL} mb-1`}>{t("adminTarot.channels")}</legend>

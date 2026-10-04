@@ -254,6 +254,9 @@ class Product(Document):
     description: str
     price: float
     compare_at_price: float | None = None  # original price; shown struck through when > price
+    # Optional dollar prices shown next to the rupee ones. Payment is still in rupees.
+    price_usd: float | None = None
+    compare_at_price_usd: float | None = None
     image_url: str | None = None
     category: str  # "bracelet" | "gemstone" | "rudraksha" | "yantra" | "other"
     stock_quantity: int = 0
@@ -521,6 +524,7 @@ class ValueCard(BaseModel):
 class RateItem(BaseModel):
     name: str
     price: int | None = None  # None = "price on request"
+    price_usd: int | None = None  # optional, shown next to the rupee price
 
 
 def _default_rates() -> list[RateItem]:
@@ -568,6 +572,7 @@ class TarotSession(BaseModel):
     name: str
     description: str
     price: int | None = None  # None = "price on request"
+    price_usd: int | None = None  # optional, shown next to the rupee price
     tag: str = ""  # small label on the card, e.g. "15 min"
     # What the customer gets once the booking is confirmed.
     channels: list[str] = Field(default_factory=lambda: list(CHANNELS))

@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import BookConsultationButton from "@/components/booking/BookConsultation";
 import Sparkle from "@/components/Sparkle";
 import Starfield from "@/components/Starfield";
-import { formatInr } from "@/lib/offerings";
+import { formatInrUsd } from "@/lib/offerings";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useHomeContent } from "@/lib/useHomeContent";
 
@@ -60,7 +60,7 @@ export default function RateList({ limit, pageSize }: { limit?: number; pageSize
                 <span className="leading-snug transition-colors group-hover:text-gold">{r.name}</span>
                 <span className="min-w-6 flex-1 translate-y-[-0.25em] border-b border-dotted border-cream/25" aria-hidden="true" />
                 <span className="shrink-0 whitespace-nowrap tabular-nums text-gold">
-                  {r.price === null ? t("tarot.priceOnRequest") : `${formatInr(r.price)}/-`}
+                  {r.price === null ? t("tarot.priceOnRequest") : `${formatInrUsd(r.price, r.price_usd)}/-`}
                 </span>
               </BookConsultationButton>
             </li>

@@ -7,6 +7,8 @@ export interface ProductOut {
   description: string;
   price: number;
   compare_at_price: number | null;
+  price_usd?: number | null; // optional dollar price, shown next to the rupee one
+  compare_at_price_usd?: number | null;
   image_url: string | null;
   category: string;
   stock_quantity: number;
@@ -71,6 +73,16 @@ const INR = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR",
 
 export function formatPrice(amount: number): string {
   return INR.format(amount);
+}
+
+const USD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
+
+export function formatUsdPrice(amount: number): string {
+  return USD.format(amount);
+}
+
+export function isOnSaleUsd(p: ProductOut): boolean {
+  return p.price_usd != null && p.compare_at_price_usd != null && p.compare_at_price_usd > p.price_usd;
 }
 
 export function isOnSale(p: ProductOut): boolean {

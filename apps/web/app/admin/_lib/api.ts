@@ -62,6 +62,8 @@ export interface ProductIn {
   description: string;
   price: number;
   compare_at_price: number | null;
+  price_usd: number | null;
+  compare_at_price_usd: number | null;
   category: string;
   stock_quantity: number;
   is_active: boolean;

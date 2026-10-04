@@ -25,13 +25,15 @@ export default async function ShopPage() {
                 ...(p.description && { description: snippet(p.description, 300) }),
                 ...(p.image_url && { image: p.image_url }),
                 category: p.category,
-                offers: {
+                offers: [
+                  { price: p.price, priceCurrency: "INR" },
+                  ...(p.price_usd != null ? [{ price: p.price_usd, priceCurrency: "USD" }] : []),
+                ].map((o) => ({
                   "@type": "Offer",
                   url: `${SITE_URL}/shop`,
-                  price: p.price,
-                  priceCurrency: "INR",
+                  ...o,
                   availability: p.stock_quantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-                },
+                })),
               },
             })),
           }}
