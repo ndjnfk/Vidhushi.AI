@@ -307,8 +307,6 @@ const gu: Record<string, string> = {
   "about.serviceBracelets": "હીલિંગ બ્રેસલેટ",
   "about.pageTitle": "અમારા વિશે",
   "about.storyTitle": "અમારી વાર્તા",
-  "about.story1": "નમૂનો લખાણ — આને વિદુષી જીની સાચી વાર્તાથી બદલો.",
-  "about.story2": "નમૂનો લખાણ — આને રીડિંગની પદ્ધતિ વિશે બીજા ફકરાથી બદલો.",
   "about.valueTraditionTitle": "પરંપરા",
   "about.valueTraditionBody": "શાસ્ત્રીય વૈદિક ગ્રંથો અને નિરયણ (લાહિરી) પદ્ધતિ પર આધારિત.",
   "about.valuePrecisionTitle": "ચોકસાઈ",

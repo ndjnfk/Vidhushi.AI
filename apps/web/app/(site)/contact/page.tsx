@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import BookConsultationButton from "@/components/booking/BookConsultation";
 import Planet from "@/components/Planet";
 import SocialIcons from "@/components/SocialIcons";
 import Sparkle from "@/components/Sparkle";
@@ -101,10 +102,10 @@ export default function ContactPage() {
           <SocialIcons links={site.social_links} className="mt-6" />
           <div className="mt-8 border border-gold/40 bg-gold/10 p-6">
             <p className="text-cream/85">{t("contact.consultNote")}</p>
-            <Link href="/?book=1" className="mt-4 inline-flex items-center gap-3 text-[13px] font-extrabold uppercase tracking-[0.14em] text-gold hover:underline">
+            <BookConsultationButton className="mt-4 inline-flex items-center gap-3 text-[13px] font-extrabold uppercase tracking-[0.14em] text-gold hover:underline">
               <Sparkle className="h-3 w-3" />
               {t("home.ctaBook")}
-            </Link>
+            </BookConsultationButton>
           </div>
         </div>
 

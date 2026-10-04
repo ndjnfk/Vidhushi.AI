@@ -1,3 +1,6 @@
+import OnlyOnPath from "@/components/OnlyOnPath";
+import ServiceInfo from "@/components/ServiceInfo";
+import { CONTACT } from "@/lib/serviceContent";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata(
@@ -7,5 +10,12 @@ export const metadata = pageMetadata(
 );
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <>
+      {children}
+      <OnlyOnPath path="/contact">
+        <ServiceInfo content={CONTACT} />
+      </OnlyOnPath>
+    </>
+  );
 }

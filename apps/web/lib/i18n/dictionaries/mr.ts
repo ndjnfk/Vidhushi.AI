@@ -307,8 +307,6 @@ const mr: Record<string, string> = {
   "about.serviceBracelets": "हीलिंग ब्रेसलेट",
   "about.pageTitle": "आमच्याबद्दल",
   "about.storyTitle": "आमची कहाणी",
-  "about.story1": "नमुना मजकूर — हा विदुषी जींच्या खऱ्या कहाणीने बदला.",
-  "about.story2": "नमुना मजकूर — हा रीडिंगच्या पद्धतीबद्दल दुसऱ्या परिच्छेदाने बदला.",
   "about.valueTraditionTitle": "परंपरा",
   "about.valueTraditionBody": "शास्त्रीय वैदिक ग्रंथ आणि निरयन (लाहिरी) पद्धतीवर आधारित.",
   "about.valuePrecisionTitle": "अचूकता",

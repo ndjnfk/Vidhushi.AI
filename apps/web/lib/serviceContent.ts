@@ -193,3 +193,162 @@ For astrology consultations, keep your exact birth date, birth time and birth pl
     },
   ],
 };
+
+export const ABOUT: ServiceContent = {
+  markdown: `
+## What Vidushi Ji offers
+
+- **Free Kundli** — an accurate Vedic birth chart with Navamsa, Vimshottari Dasha, Panchang and a plain-language dosha check. [Generate yours](/kundli).
+- **Guna Milan** — Ashtakoot marriage matching out of 36, with Nadi, Bhakoot and Manglik dosha explained. [Check a match](/matching).
+- **Personal consultations** — one-to-one readings by chat, audio or video for questions about career, marriage, relationships, health, finances and timing. [See services and pricing](/pricing).
+- **Tarot sessions** — guidance on a specific question or area of life, read from the cards.
+- **Healing rituals** — intention-based spiritual work, including weekly candle rituals. [Explore rituals](/rituals).
+- **Healing bracelets** — energised and blessed stones, delivered to your door. [Visit the shop](/shop).
+
+## How a reading works
+
+Every consultation begins with your own details — your birth date, time and place for astrology, or your question for tarot. Charts, Dashas and Panchang are calculated precisely from those details, never guessed. Vidushi Ji then reads the whole picture together and explains it in simple words: what the chart shows, which period you are in, and what practical steps or remedies may help.
+
+## What you can expect
+
+- **Honesty over fear.** A dosha or a difficult period is explained calmly, together with what can be done about it.
+- **Clear language.** No jargon for its own sake — you should leave a reading understanding your chart better than before.
+- **Guidance, not guarantees.** Astrology, tarot and rituals are tools for reflection and spiritual support. They do not replace medical, legal or financial advice.
+
+Have a question before you book? [Contact Vidushi Ji](/contact) or read the [astrology blog](/blog).
+`,
+  faqs: [
+    {
+      q: "Who is Vidushi Ji?",
+      a: "Vidushi Ji is a Vedic astrologer and tarot reader. Through this website she offers free Kundli and Guna Milan tools, personal consultations by chat, audio or video, tarot sessions, healing rituals and energised healing bracelets.",
+    },
+    {
+      q: "Which system of astrology does Vidushi Ji follow?",
+      a: "Classical Vedic (Jyotish) astrology with the sidereal zodiac and the Lahiri ayanamsa, the system used by most astrologers in India. Planetary periods are read with the Vimshottari Dasha system.",
+    },
+    {
+      q: "Do I need an account to use the free Kundli and Guna Milan?",
+      a: "No. You can generate a Kundli or check Guna Milan straight away by entering birth details. An account is only needed to book a consultation, enquire about a ritual or place a shop order.",
+    },
+  ],
+};
+
+export const BLOG: ServiceContent = {
+  markdown: `
+## About this blog
+
+The Vidushi Ji blog explains Vedic astrology in plain language, without jargon or fear. Articles cover the questions people ask most often: what a Kundli shows, how Guna Milan works, what Manglik dosha, Sade Sati or Kaal Sarp dosha really mean, how Dasha periods shape the timing of events, and which remedies are traditionally suggested.
+
+## Start here
+
+- New to astrology? Generate your [free Kundli](/kundli) and read the guide below the form — it explains your Lagna, Moon sign, houses and Dasha.
+- Checking a match for marriage? Use [Guna Milan](/matching) and read how the 36 gunas and the Nadi and Bhakoot doshas work.
+- Looking for spiritual support for a specific intention? Read about [healing rituals](/rituals).
+- Want answers for your own chart? [Book a personal consultation](/pricing) with Vidushi Ji.
+
+## Topics we write about
+
+- **Kundli basics** — Lagna, Moon sign, nakshatras, the twelve houses and how to read a birth chart.
+- **Marriage and compatibility** — Guna Milan, Manglik dosha, the 7th house and the Navamsa chart.
+- **Timing** — Vimshottari Dasha, Sade Sati, Dhaiya and important planetary transits.
+- **Remedies and rituals** — mantras, fasting, charity, gemstones and healing rituals, and when each is traditionally suggested.
+
+Every article is general guidance. Your own chart may show things an article cannot, so for decisions about marriage, career or health, a personal reading is the better guide.
+`,
+  faqs: [],
+};
+
+export const SHOP: ServiceContent = {
+  markdown: `
+## Healing bracelets, energised for you
+
+Every bracelet and stone in the Vidushi Ji shop is chosen for its traditional meaning, then energised and blessed before it is sent to you. Crystals and gemstones have been worn for centuries as reminders of an intention — calm, love, protection, confidence or focus. Read each product's description to see which stones it uses and what they are traditionally associated with.
+
+## How to choose
+
+- **Start with your intention.** Pick the stone whose traditional meaning matches what you want to work on right now.
+- **Keep it simple.** One bracelet worn with a clear intention is better than many worn without one.
+- **Not sure?** Ask during a [personal consultation](/pricing) — Vidushi Ji can suggest stones that suit your chart and your question.
+
+## Caring for your bracelet
+
+Take your bracelet off before bathing, swimming or exercising, and keep it away from perfume, soap and chemicals. Store it separately so the stones don't scratch, and wipe it gently with a soft dry cloth.
+
+## Ordering and delivery
+
+Add items to your cart and check out with your delivery address. Depending on your pincode, you either pay the whole amount as **cash on delivery**, or pay a part **online by UPI** first and the rest in cash when the order arrives — the checkout shows which applies before you place the order. Once your order ships, **My Orders** shows its status and courier tracking.
+
+Healing stones are a spiritual practice and a personal reminder of your intention. They are not a substitute for medical treatment.
+`,
+  faqs: [
+    {
+      q: "Is cash on delivery available?",
+      a: "Yes. For many pincodes the whole order is cash on delivery. For others you pay part of the amount online by UPI when you order and the rest in cash on delivery. The checkout tells you which applies to your address before you confirm.",
+    },
+    {
+      q: "How do I track my order?",
+      a: "Log in and open My Orders. Each order shows its current status — placed, confirmed, shipped or delivered — and, once shipped, the courier name and tracking number.",
+    },
+    {
+      q: "What does 'energised' mean?",
+      a: "Each bracelet is energised and blessed with an intention before it is packed and sent to you, following traditional spiritual practice. It is a spiritual practice, not a medical treatment.",
+    },
+  ],
+};
+
+export const REVIEWS: ServiceContent = {
+  markdown: `
+## Reviews from real customers only
+
+Every review on this page comes from a customer who has actually used a Vidushi Ji service. A review can only be written after a consultation or ritual has been **completed**, or after a shop order has been **delivered** — and only once per booking or order. Reviews are shown with the customer's first name and the service they reviewed, newest first.
+
+## Share your experience
+
+Had a consultation, a tarot session, a ritual or a shop order? Log in and open the booking or order. Once it is completed or delivered you will see the option to leave a star rating and a few words. Honest feedback, positive or critical, helps others decide and helps Vidushi Ji improve.
+
+## What clients review
+
+- **Consultations** — astrology readings by chat, audio or video about career, marriage, relationships, health and timing.
+- **Tarot sessions** — readings focused on a specific question or area of life.
+- **Healing rituals** — intention-based rituals, including weekly candle rituals.
+- **Shop orders** — energised healing bracelets and stones, reviewed after delivery.
+
+Want to see what a session is like for yourself? Read about [services and pricing](/pricing), or start with a [free Kundli](/kundli).
+`,
+  faqs: [
+    {
+      q: "Are the reviews on this page genuine?",
+      a: "Yes. Only customers with a completed consultation or ritual, or a delivered shop order, can write a review, and each booking or order can be reviewed once.",
+    },
+    {
+      q: "How do I leave a review?",
+      a: "Log in, open your completed booking or delivered order, and choose a star rating from 1 to 5 with a short comment. Your review appears on this page with your first name.",
+    },
+  ],
+};
+
+export const CONTACT: ServiceContent = {
+  markdown: `
+## How can we help?
+
+- **Want a personal reading?** You don't need to write first — [book a consultation](/pricing) directly and choose chat, audio or video.
+- **Question about an order?** Log in and open **My Orders** to see its status and courier tracking. If something is wrong, send a message with your order number.
+- **Question about a ritual?** Use **Enquire about a ritual** on the [rituals page](/rituals) and share your intention and timeline.
+- **Anything else?** Use the form on this page, or the phone, email or WhatsApp details shown.
+
+## When you write, please include
+
+- Your name and the email you used on the site.
+- Your order number or booking date, if your message is about one.
+- For an astrology question: your birth date, time and place.
+
+Vidushi Ji reads every message and replies to your email.
+
+## Quick answers before you write
+
+- **Free tools need no account.** You can generate a [Kundli](/kundli) or check [Guna Milan](/matching) right away, without signing up.
+- **Consultation charges** for every service are listed on the [pricing page](/pricing), and you pay only after your session time is confirmed.
+- **Forgot your password?** Use "Forgot password" on the login page to reset it with your security question.
+`,
+  faqs: [],
+};

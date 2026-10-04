@@ -307,8 +307,6 @@ const pa: Record<string, string> = {
   "about.serviceBracelets": "ਹੀਲਿੰਗ ਬ੍ਰੇਸਲੇਟ",
   "about.pageTitle": "ਸਾਡੇ ਬਾਰੇ",
   "about.storyTitle": "ਸਾਡੀ ਕਹਾਣੀ",
-  "about.story1": "ਨਮੂਨਾ ਪਾਠ — ਇਸਨੂੰ ਵਿਦੁਸ਼ੀ ਜੀ ਦੀ ਅਸਲ ਕਹਾਣੀ ਨਾਲ ਬਦਲੋ।",
-  "about.story2": "ਨਮੂਨਾ ਪਾਠ — ਇਸਨੂੰ ਰੀਡਿੰਗ ਦੇ ਤਰੀਕੇ ਬਾਰੇ ਦੂਜੇ ਪੈਰੇ ਨਾਲ ਬਦਲੋ।",
   "about.valueTraditionTitle": "ਪਰੰਪਰਾ",
   "about.valueTraditionBody": "ਸ਼ਾਸਤਰੀ ਵੈਦਿਕ ਗ੍ਰੰਥਾਂ ਅਤੇ ਨਿਰਯਣ (ਲਾਹਿੜੀ) ਪੱਧਤੀ ਉੱਤੇ ਅਧਾਰਿਤ।",
   "about.valuePrecisionTitle": "ਸਟੀਕਤਾ",
