@@ -94,3 +94,18 @@ async def test_admin_lists_drafts_and_deletes():
         await catalog.admin_get_post(p.id)
     with _pytest.raises(HTTPException):
         await catalog.admin_get_post("not-an-id")
+
+
+async def test_blog_list_comes_a_page_at_a_time():
+    for i in range(5):
+        p = await catalog.create_post(_post(slug=f"post-{i}", title=f"Post {i}", tags=["tarot"] if i % 2 else ["kundli"]))
+        await catalog.update_post(p.id, BlogPostUpdate(published=True))
+    await catalog.create_post(_post(slug="draft", tags=["secret"]))  # unpublished: not counted, tag not listed
+
+    first = await blog.list_page(skip=0, limit=2)
+    assert [p.slug for p in first.items] == ["post-4", "post-3"] and first.total == 5
+    assert first.tags == ["kundli", "tarot"]
+    last = await blog.list_page(skip=4, limit=2)
+    assert [p.slug for p in last.items] == ["post-0"]
+    tarot = await blog.list_page(tag="Tarot", skip=0, limit=20)
+    assert [p.slug for p in tarot.items] == ["post-3", "post-1"] and tarot.total == 2

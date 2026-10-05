@@ -6,7 +6,7 @@ import type { HomeContent } from "@/lib/useHomeContent";
 import type { TarotContent } from "@/lib/useTarotContent";
 import type { RitualsContent } from "@/lib/useRitualsContent";
 import type { BlogPostOut } from "@/lib/blog";
-import type { ReviewOut } from "@/lib/reviews";
+import type { ReviewOut, ReviewScreenshotOut } from "@/lib/reviews";
 import type { SocialLink } from "@/lib/useSiteInfo";
 import { adminFetch } from "./session";
 
@@ -147,6 +147,10 @@ export interface AdminReviewIn {
 }
 export const addAdminReview = (body: AdminReviewIn) =>
   adminFetch<AdminReviewOut>("/admin/reviews", { method: "POST", body: JSON.stringify(body) });
+export const addReviewScreenshot = (data_url: string, caption = "") =>
+  adminFetch<ReviewScreenshotOut>("/admin/reviews/screenshots", { method: "POST", body: JSON.stringify({ data_url, caption }) });
+export const deleteReviewScreenshot = (id: string) =>
+  adminFetch<{ deleted: boolean }>(`/admin/reviews/screenshots/${id}`, { method: "DELETE" });
 export const listAdminReviews = () => adminFetch<AdminReviewOut[]>("/admin/reviews");
 export const setReviewHidden = (id: string, hidden: boolean) =>
   adminFetch<AdminReviewOut>(`/admin/reviews/${id}`, { method: "PUT", body: JSON.stringify({ hidden }) });

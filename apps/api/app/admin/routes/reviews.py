@@ -7,12 +7,15 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.admin.deps import get_current_admin
-from app.api.routes.reviews import review_out
+from app.api.routes.reviews import review_out, screenshot_out
 from app.core.live import REVIEWS, bump
-from app.models.models import Review
-from app.schemas.schemas import AdminReviewIn, AdminReviewOut, ReviewHiddenIn
+from app.core.upi import decode_image_upload
+from app.models.models import Review, ReviewScreenshot
+from app.schemas.schemas import AdminReviewIn, AdminReviewOut, ReviewHiddenIn, ReviewScreenshotIn, ReviewScreenshotOut
 
 router = APIRouter(prefix="/admin/reviews", tags=["admin"], dependencies=[Depends(get_current_admin)])
+
+MAX_SCREENSHOT_BYTES = 3 * 1024 * 1024  # the browser shrinks them well below this
 
 
 def admin_out(r: Review) -> AdminReviewOut:
@@ -36,6 +39,32 @@ async def add_review(payload: AdminReviewIn):
     await r.insert()
     await bump(REVIEWS)
     return admin_out(r)
+
+
+@router.post("/screenshots", response_model=ReviewScreenshotOut)
+async def add_screenshot(payload: ReviewScreenshotIn):
+    """A screenshot of a review from WhatsApp etc., for the Reviews page slider."""
+    try:
+        data, content_type = decode_image_upload(payload.data_url, MAX_SCREENSHOT_BYTES)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    s = ReviewScreenshot(data=data, content_type=content_type, caption=payload.caption.strip())
+    await s.insert()
+    await bump(REVIEWS)
+    return screenshot_out(s)
+
+
+@router.delete("/screenshots/{screenshot_id}")
+async def delete_screenshot(screenshot_id: str) -> dict:
+    try:
+        s = await ReviewScreenshot.get(PydanticObjectId(screenshot_id))
+    except Exception:
+        s = None
+    if s is None:
+        raise HTTPException(status_code=404, detail="Screenshot not found")
+    await s.delete()
+    await bump(REVIEWS)
+    return {"deleted": True}
 
 
 @router.put("/{review_id}", response_model=AdminReviewOut)

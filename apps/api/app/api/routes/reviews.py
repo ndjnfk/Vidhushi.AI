@@ -2,14 +2,15 @@
 is delivered, its owner can rate it once. Visible reviews are listed on the
 public Reviews page, 10 at a time. The admin side is app.admin.routes.reviews."""
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pymongo.errors import DuplicateKeyError
 
+from app.core.config import get_settings
 from app.core.deps import get_current_user
 from app.core.live import REVIEWS, bump
 from app.core.notify import notify_admins
-from app.models.models import ConsultationRequest, Review, ShopOrder, User
-from app.schemas.schemas import MyReviewOut, ReviewIn, ReviewOut, ReviewPageOut
+from app.models.models import ConsultationRequest, Review, ReviewScreenshot, ShopOrder, User
+from app.schemas.schemas import MyReviewOut, ReviewIn, ReviewOut, ReviewPageOut, ReviewScreenshotOut
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
@@ -46,6 +47,30 @@ async def list_reviews(skip: int = Query(0, ge=0), limit: int = Query(PAGE, ge=1
     ).to_list(1)
     return ReviewPageOut(items=[review_out(r) for r in rows], total=total,
                          average=round(avg[0]["avg"], 1) if avg else None)
+
+
+def screenshot_out(s: ReviewScreenshot | dict) -> ReviewScreenshotOut:
+    """From a document, or a raw row read without its image bytes."""
+    sid, caption, created = (s["_id"], s.get("caption", ""), s["created_at"]) if isinstance(s, dict) else (s.id, s.caption, s.created_at)
+    return ReviewScreenshotOut(id=str(sid), url=f"{get_settings().api_public_url}/reviews/screenshots/{sid}",
+                               caption=caption, created_at=created)
+
+
+@router.get("/screenshots", response_model=list[ReviewScreenshotOut])
+async def list_screenshots():
+    """Review screenshots (WhatsApp etc.) for the Reviews page slider, newest first."""
+    rows = ReviewScreenshot.get_motor_collection().find({}, {"data": 0}).sort("created_at", -1)
+    return [screenshot_out(s) async for s in rows]
+
+
+@router.get("/screenshots/{screenshot_id}")
+async def screenshot_image(screenshot_id: str):
+    s = await _get(ReviewScreenshot, screenshot_id)
+    if s is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    # Each upload gets a new id and is never changed, so it can be cached for good.
+    return Response(content=s.data, media_type=s.content_type,
+                    headers={"Cache-Control": "public, max-age=31536000, immutable"})
 
 
 @router.get("/mine", response_model=list[MyReviewOut])

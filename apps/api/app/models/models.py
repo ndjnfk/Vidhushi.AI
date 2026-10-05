@@ -670,6 +670,20 @@ class Review(Document):
         ]
 
 
+class ReviewScreenshot(Document):
+    """A screenshot of a client's review from WhatsApp/Instagram, uploaded by
+    the admin (already shrunk in the browser) and shown in a slider on the
+    public Reviews page, newest first."""
+    data: bytes
+    content_type: str
+    caption: str = ""  # alt text, e.g. "WhatsApp review from a tarot client"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "review_screenshots"
+        indexes = [IndexModel([("created_at", -1)])]
+
+
 class BookingPhoto(Document):
     """A photo a client attached to a session or ritual request (e.g. palms).
     Private: served only to that client and to the admin, never by public URL."""

@@ -5,7 +5,12 @@ import Stars from "@/components/reviews/Stars";
 import { parseUtc } from "@/lib/bookings";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { INPUT, LABEL } from "../../_components/ContentEditor";
-import { addAdminReview, deleteReview, listAdminReviews, setReviewHidden, type AdminReviewIn, type AdminReviewOut } from "../../_lib/api";
+import { listReviewScreenshots, type ReviewScreenshotOut } from "@/lib/reviews";
+import {
+  addAdminReview, addReviewScreenshot, deleteReview, deleteReviewScreenshot, listAdminReviews, setReviewHidden,
+  type AdminReviewIn, type AdminReviewOut,
+} from "../../_lib/api";
+import { prepareImage } from "../../_lib/image";
 
 const BTN = "inline-flex items-center justify-center gap-2 px-5 py-3 text-[12px] font-extrabold uppercase tracking-[0.14em] transition-colors disabled:opacity-50";
 const FILTERS = ["all", "visible", "hidden"] as const;
@@ -74,6 +79,86 @@ function AddReviewForm({ onAdded, onCancel }: { onAdded: (r: AdminReviewOut) => 
         {error && <p className="text-sm text-red-400">{error}</p>}
       </div>
     </form>
+  );
+}
+
+// Screenshots of reviews clients sent on WhatsApp etc., shown in a slider on
+// the public Reviews page. Each photo is shrunk in the browser before upload.
+function Screenshots() {
+  const { t } = useLanguage();
+  const [shots, setShots] = useState<ReviewScreenshotOut[] | null>(null);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    listReviewScreenshots().then(setShots).catch((e: Error) => setError(e.message));
+  }, []);
+
+  async function upload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = [...(e.target.files ?? [])];
+    e.target.value = "";
+    setError(null);
+    const failed: string[] = [];
+    for (const [i, f] of files.entries()) {
+      setProgress(t("adminReviews.uploading").replace("{n}", String(i + 1)).replace("{total}", String(files.length)));
+      try {
+        // Phone screenshots are tall: 1600 px keeps the text sharp.
+        const added = await addReviewScreenshot(await prepareImage(f, 1600));
+        setShots((cur) => [added, ...(cur ?? [])]);
+      } catch (err) {
+        failed.push(`${f.name}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    setProgress(null);
+    if (failed.length) setError(failed.join(" · "));
+  }
+
+  async function remove(s: ReviewScreenshotOut) {
+    if (!confirm(t("adminReviews.deleteScreenshotConfirm"))) return;
+    setBusyId(s.id);
+    setError(null);
+    try {
+      await deleteReviewScreenshot(s.id);
+      setShots((cur) => cur && cur.filter((x) => x.id !== s.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <section className="mt-16 border-t border-line pt-10">
+      <h2 className="font-display text-[clamp(1.6rem,3vw,2.2rem)] uppercase tracking-[0.04em] text-gold">{t("adminReviews.screenshotsTitle")}</h2>
+      <p className="mt-2 max-w-2xl text-cream/70">{t("adminReviews.screenshotsHint")}</p>
+      <label className={`${BTN} mt-5 cursor-pointer bg-white text-ink hover:bg-gold ${progress ? "pointer-events-none opacity-60" : ""}`}>
+        + {t("adminReviews.uploadScreenshots")}
+        <input type="file" accept="image/png,image/jpeg,image/webp" multiple className="sr-only" onChange={upload} disabled={!!progress} />
+      </label>
+      {progress && <p role="status" className="mt-3 text-sm text-gold">{progress}</p>}
+      {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+      {!shots ? (
+        <p className="mt-6 text-cream/70">{t("common.loading")}</p>
+      ) : shots.length === 0 ? (
+        <p className="mt-6 text-cream/70">{t("adminReviews.noScreenshots")}</p>
+      ) : (
+        <ul className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          {shots.map((s) => (
+            <li key={s.id} className="flex flex-col border border-line bg-ink-soft/60">
+              <a href={s.url} target="_blank" rel="noopener noreferrer" className="block aspect-[9/16] overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={s.url} alt="" loading="lazy" className="h-full w-full object-cover object-top" />
+              </a>
+              <button type="button" onClick={() => remove(s)} disabled={busyId === s.id}
+                className={`${BTN} border-t border-line text-cream/70 hover:text-red-300`}>
+                {t("adminReviews.delete")}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -194,6 +279,8 @@ export default function AdminReviewsPage() {
           </ul>
         )}
         {rows && error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+
+        <Screenshots />
       </div>
     </div>
   );

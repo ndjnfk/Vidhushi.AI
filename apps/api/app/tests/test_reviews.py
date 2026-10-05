@@ -8,7 +8,7 @@ from app.admin.routes import bookings as admin_bookings
 from app.admin.routes import reviews as admin_reviews
 from app.api.routes import bookings, reviews
 from app.models.models import ConsultationRequest, OrderStatusEvent, ShippingAddress, ShopOrder, ShopOrderItem, User
-from app.schemas.schemas import AdminReviewIn, ConsultationApproveIn, ReviewHiddenIn, ReviewIn
+from app.schemas.schemas import AdminReviewIn, ConsultationApproveIn, ReviewHiddenIn, ReviewIn, ReviewScreenshotIn
 
 
 @pytest.fixture(autouse=True)
@@ -150,3 +150,23 @@ async def test_admin_adds_a_review_by_hand():
         AdminReviewIn(name="X", rating=5, text="Lovely", label="Tarot", given_on=date(2999, 1, 1))
     with pytest.raises(ValueError):
         AdminReviewIn(name="   ", rating=5, text="Lovely", label="Tarot")
+
+
+async def test_admin_uploads_and_deletes_review_screenshots():
+    png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+    first = await admin_reviews.add_screenshot(ReviewScreenshotIn(data_url=png, caption=" WhatsApp review "))
+    second = await admin_reviews.add_screenshot(ReviewScreenshotIn(data_url=png))
+    listed = await reviews.list_screenshots()
+    assert [s.id for s in listed] == [second.id, first.id] and listed[1].caption == "WhatsApp review"
+    assert listed[0].url.endswith(f"/reviews/screenshots/{second.id}")
+    img = await reviews.screenshot_image(first.id)
+    assert img.media_type == "image/png" and img.body.startswith(b"\x89PNG")
+
+    with pytest.raises(HTTPException) as e:
+        await admin_reviews.add_screenshot(ReviewScreenshotIn(data_url="data:text/plain;base64,aGk="))
+    assert e.value.status_code == 422
+
+    assert await admin_reviews.delete_screenshot(first.id) == {"deleted": True}
+    assert [s.id for s in await reviews.list_screenshots()] == [second.id]
+    with pytest.raises(HTTPException):
+        await reviews.screenshot_image(first.id)

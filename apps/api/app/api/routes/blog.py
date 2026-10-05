@@ -1,10 +1,10 @@
 import math
 import re
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from app.models.models import BlogPost
-from app.schemas.schemas import BlogPostAdminOut, BlogPostOut, BlogPostSummaryOut
+from app.schemas.schemas import BlogPageOut, BlogPostAdminOut, BlogPostOut, BlogPostSummaryOut
 
 router = APIRouter(prefix="/blog", tags=["blog"])
 
@@ -45,6 +45,19 @@ async def list_posts(tag: str | None = None, limit: int = 100):
         query["tags"] = tag.strip().lower()
     posts = await BlogPost.find(query).sort(_NEWEST).limit(min(max(limit, 1), 100)).to_list()
     return [_summary(p) for p in posts]
+
+
+@router.get("/_page", response_model=BlogPageOut)
+async def list_page(tag: str | None = None, skip: int = Query(0, ge=0), limit: int = Query(20, ge=1, le=50)):
+    """One page of the blog list (the /blog page), plus the total and all topics.
+    ("_page" can never be a post's slug, so it doesn't shadow /blog/{slug}.)"""
+    query: dict = {"published": True}
+    if tag:
+        query["tags"] = tag.strip().lower()
+    posts = await BlogPost.find(query).sort(_NEWEST).skip(skip).limit(limit).to_list()
+    total = await BlogPost.find(query).count()
+    tags = await BlogPost.get_motor_collection().distinct("tags", {"published": True})
+    return BlogPageOut(items=[_summary(p) for p in posts], total=total, tags=sorted(tags))
 
 
 @router.get("/{slug}", response_model=BlogPostOut)

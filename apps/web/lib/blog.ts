@@ -26,8 +26,27 @@ export interface BlogPostOut extends BlogPostSummaryOut {
 // the admin publishes shows up without a redeploy.
 const FRESH = 60;
 
-export function listPosts(tag?: string): Promise<BlogPostSummaryOut[] | null> {
-  return fetchPublic<BlogPostSummaryOut[]>(`/blog${tag ? `?tag=${encodeURIComponent(tag)}` : ""}`, FRESH);
+export interface BlogPageOut {
+  items: BlogPostSummaryOut[];
+  total: number;
+  tags: string[]; // every topic, for the filter chips
+}
+
+/** The newest `limit` posts (used for "related posts"). */
+export function listPosts(tag?: string, limit = BLOG_PAGE): Promise<BlogPostSummaryOut[] | null> {
+  const q = new URLSearchParams({ limit: String(limit) });
+  if (tag) q.set("tag", tag);
+  return fetchPublic<BlogPostSummaryOut[]>(`/blog?${q}`, FRESH);
+}
+
+// The /blog page loads this many posts at a time.
+export const BLOG_PAGE = 20;
+
+/** One page of the blog list (1-based), with the total and all topics. */
+export function listPostsPage(page: number, tag?: string): Promise<BlogPageOut | null> {
+  const q = new URLSearchParams({ skip: String((page - 1) * BLOG_PAGE), limit: String(BLOG_PAGE) });
+  if (tag) q.set("tag", tag);
+  return fetchPublic<BlogPageOut>(`/blog/_page?${q}`, FRESH);
 }
 
 export function getPost(slug: string): Promise<BlogPostOut | null> {

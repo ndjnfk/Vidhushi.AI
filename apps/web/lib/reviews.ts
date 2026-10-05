@@ -22,10 +22,18 @@ export interface ReviewPageOut {
   average: number | null;
 }
 
-export const REVIEWS_PAGE = 10;
+export const REVIEWS_PAGE = 15;
 
 export const listReviews = (skip = 0, limit = REVIEWS_PAGE) =>
   apiFetch<ReviewPageOut>(`/reviews?skip=${skip}&limit=${limit}`);
+// Screenshots of reviews from WhatsApp etc., uploaded by the admin.
+export interface ReviewScreenshotOut {
+  id: string;
+  url: string;
+  caption: string;
+  created_at: string;
+}
+export const listReviewScreenshots = () => apiFetch<ReviewScreenshotOut[]>("/reviews/screenshots");
 export const myReviews = () => apiFetch<MyReviewOut[]>("/reviews/mine");
 // target: "booking" for a consultation/ritual, "order" for a shop order.
 export const createReview = (body: { target: "booking" | "order"; target_id: string; rating: number; text: string }) =>

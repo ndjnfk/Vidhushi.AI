@@ -61,13 +61,23 @@ export const SITE_SCHEMA = {
       knowsAbout: ["Tarot reading", "Runes", "Cartomancy", "Dice divination", "Domino divination", "Energy healing", "Occult practices", "Healing rituals", "Vedic astrology", "Kundli", "Guna Milan"],
     },
     {
-      "@type": "ProfessionalService",
+      // Sessions happen online (no walk-in address), so this is an
+      // OnlineBusiness rather than a LocalBusiness/ProfessionalService, which
+      // Google flags without a street address.
+      "@type": "OnlineBusiness",
       "@id": `${SITE_URL}/#business`,
       name: SITE_NAME,
       url: SITE_URL,
       description: DEFAULT_DESCRIPTION,
-      areaServed: "IN",
+      areaServed: { "@type": "Country", name: "India" },
       founder: { "@id": `${SITE_URL}/#person` },
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "customer service",
+        telephone: "+91-84456-53616",
+        email: "vidushiji.tarot95@gmail.com",
+        availableLanguage: ["English", "Hindi"],
+      },
     },
   ],
 };

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import ScreenshotSlider from "@/components/reviews/ScreenshotSlider";
 import Stars from "@/components/reviews/Stars";
 import Sparkle from "@/components/Sparkle";
 import Starfield from "@/components/Starfield";
@@ -107,6 +108,8 @@ export default function ReviewsView({ initial }: { initial: ReviewPageOut | null
             {error && <p className="mt-4 text-center text-sm text-red-400">{error}</p>}
           </>
         )}
+
+        <ScreenshotSlider />
       </div>
     </div>
   );

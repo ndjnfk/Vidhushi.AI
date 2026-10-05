@@ -494,6 +494,13 @@ class BlogPostSummaryOut(BaseModel):
     reading_minutes: int = 1
 
 
+class BlogPageOut(BaseModel):
+    """One page of the public blog list."""
+    items: list[BlogPostSummaryOut]
+    total: int  # published posts matching the tag filter
+    tags: list[str]  # every tag on a published post, for the topic chips
+
+
 class BlogPostOut(BlogPostSummaryOut):
     body: str
     seo_title: str = ""
@@ -1049,6 +1056,18 @@ class AdminReviewIn(BaseModel):
 
 class ReviewHiddenIn(BaseModel):
     hidden: bool
+
+
+class ReviewScreenshotIn(BaseModel):
+    data_url: str  # "data:image/webp;base64,..." (shrunk in the browser)
+    caption: str = Field(default="", max_length=150)
+
+
+class ReviewScreenshotOut(BaseModel):
+    id: str
+    url: str
+    caption: str
+    created_at: datetime
 
 
 # ---- Rituals page (admin-editable) ----
