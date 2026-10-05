@@ -1,6 +1,6 @@
 """GET /live — Server-Sent Events carrying the revision counters a page
 cares about: the public ones, plus the signed-in user's bookings/orders.
-Each message is the full map, e.g. {"site": 3, "home": 1, "products": 7, "me": 2}."""
+Each message is the full map, e.g. {"site": 3, "home": 1, "products": 7, "reviews": 4, "me": 2}."""
 import asyncio
 import json
 
@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
 from app.core.deps import get_current_user_optional
-from app.core.live import HOME, PRODUCTS, SITE, current_revs, user_topic
+from app.core.live import HOME, PRODUCTS, REVIEWS, SITE, current_revs, user_topic
 from app.models.models import User
 
 router = APIRouter(tags=["live"])
@@ -19,7 +19,7 @@ PING_SECONDS = 20
 
 @router.get("/live")
 async def live(request: Request, user: User | None = Depends(get_current_user_optional)):
-    names = {SITE: SITE, HOME: HOME, PRODUCTS: PRODUCTS}
+    names = {SITE: SITE, HOME: HOME, PRODUCTS: PRODUCTS, REVIEWS: REVIEWS}
     if user is not None:
         names[user_topic(user.id)] = "me"
 

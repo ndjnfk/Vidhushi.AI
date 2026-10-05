@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { apiFetch } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { createLiveResource } from "@/lib/live";
+import type { Channel } from "@/lib/bookings";
 import { RITUAL_INTENTIONS } from "@/lib/offerings";
 
 export interface RitualIntentionItem {
@@ -11,6 +12,7 @@ export interface RitualIntentionItem {
   name: string;
   price?: number | null; // rupees; null = no price shown
   price_usd?: number | null; // optional, shown next to the rupee price
+  channels?: Channel[]; // what a client booking it gets once confirmed; default chat only
 }
 
 // Rituals page content, edited in the admin panel ("Rituals page").

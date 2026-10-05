@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 from fastapi import HTTPException
@@ -8,7 +8,7 @@ from app.admin.routes import bookings as admin_bookings
 from app.admin.routes import reviews as admin_reviews
 from app.api.routes import bookings, reviews
 from app.models.models import ConsultationRequest, OrderStatusEvent, ShippingAddress, ShopOrder, ShopOrderItem, User
-from app.schemas.schemas import ConsultationApproveIn, ReviewHiddenIn, ReviewIn
+from app.schemas.schemas import AdminReviewIn, ConsultationApproveIn, ReviewHiddenIn, ReviewIn
 
 
 @pytest.fixture(autouse=True)
@@ -130,3 +130,23 @@ async def test_admin_can_delete_a_review():
     with pytest.raises(HTTPException) as e:
         await admin_reviews.delete_review(r.id)
     assert e.value.status_code == 404
+
+
+async def test_admin_adds_a_review_by_hand():
+    old = await admin_reviews.add_review(AdminReviewIn(
+        name=" Priya Sharma ", rating=5, text="Her reading in 2023 changed my life.", label="Career Tarot Reading",
+        given_on=date(2023, 5, 1)))
+    new = await admin_reviews.add_review(AdminReviewIn(name="Rahul", rating=4, text="Very accurate.", label="Kundli"))
+    assert old.added_by_admin and old.name == "Priya Sharma" and old.target_kind == "consultation"
+    assert old.created_at.date() == date(2023, 5, 1)
+
+    page = await reviews.list_reviews(skip=0, limit=10)
+    assert [r.id for r in page.items] == [new.id, old.id] and page.average == 4.5
+    await admin_reviews.set_hidden(old.id, ReviewHiddenIn(hidden=True))
+    assert (await reviews.list_reviews(skip=0, limit=10)).total == 1
+    assert (await admin_reviews.delete_review(new.id)) == {"deleted": True}
+
+    with pytest.raises(ValueError):
+        AdminReviewIn(name="X", rating=5, text="Lovely", label="Tarot", given_on=date(2999, 1, 1))
+    with pytest.raises(ValueError):
+        AdminReviewIn(name="   ", rating=5, text="Lovely", label="Tarot")

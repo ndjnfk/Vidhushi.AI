@@ -233,7 +233,7 @@ const pa: Record<string, string> = {
   "booking.fee": "ਫੀਸ",
   "booking.payNow": "UPI ਨਾਲ ਭੁਗਤਾਨ ਕਰੋ",
   "booking.roomOpen": "ਕਾਲ ਰੂਮ ਖੁੱਲ੍ਹ ਗਿਆ ਹੈ।",
-  "booking.roomOpensNote": "ਕਾਲ ਦੇ ਬਟਨ ਤੁਹਾਡੇ ਸਮੇਂ ਤੋਂ 15 ਮਿੰਟ ਪਹਿਲਾਂ ਖੁੱਲ੍ਹਣਗੇ।",
+  "booking.roomOpensNote": "ਕਾਲ ਦੇ ਬਟਨ ਤੁਹਾਡੇ ਤੈਅ ਸਮੇਂ 'ਤੇ ਦਿਖਣਗੇ ਅਤੇ ਸੈਸ਼ਨ ਪੂਰਾ ਹੋਣ ਤੱਕ ਰਹਿਣਗੇ।",
   "booking.startsIn": "ਸ਼ੁਰੂ ਹੋਣ ਵਿੱਚ",
   "booking.joinVideo": "ਵੀਡੀਓ ਕਾਲ ਵਿੱਚ ਜੁੜੋ",
   "booking.joinAudio": "ਆਡੀਓ ਕਾਲ ਵਿੱਚ ਜੁੜੋ",

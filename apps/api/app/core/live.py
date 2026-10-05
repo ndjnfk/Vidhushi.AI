@@ -6,7 +6,7 @@ from app.models.models import Revision
 
 log = logging.getLogger(__name__)
 
-SITE, HOME, PRODUCTS = "site", "home", "products"
+SITE, HOME, PRODUCTS, REVIEWS = "site", "home", "products", "reviews"
 
 
 def user_topic(user_id: object) -> str:

@@ -233,7 +233,7 @@ const gu: Record<string, string> = {
   "booking.fee": "ફી",
   "booking.payNow": "UPI થી ચુકવણી કરો",
   "booking.roomOpen": "કૉલ રૂમ ખુલ્લો છે.",
-  "booking.roomOpensNote": "કૉલના બટન તમારા સમયથી 15 મિનિટ પહેલાં ખુલશે.",
+  "booking.roomOpensNote": "કૉલના બટન તમારા નક્કી સમયે દેખાશે અને સેશન પૂર્ણ થાય ત્યાં સુધી રહેશે.",
   "booking.startsIn": "શરૂ થવામાં",
   "booking.joinVideo": "વીડિયો કૉલમાં જોડાઓ",
   "booking.joinAudio": "ઑડિયો કૉલમાં જોડાઓ",

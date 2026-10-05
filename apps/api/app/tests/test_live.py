@@ -48,7 +48,7 @@ async def test_admin_edits_bump_public_and_user_topics():
 async def test_stream_sends_public_revs_and_own_topic_only():
     await bump("products")
     anon = await _read()
-    assert json.loads(anon[0].removeprefix("data: ")) == {"site": 0, "home": 0, "products": 1}
+    assert json.loads(anon[0].removeprefix("data: ")) == {"site": 0, "home": 0, "products": 1, "reviews": 0}
 
     user = User(email="u@example.com", hashed_password="x")
     await user.insert()

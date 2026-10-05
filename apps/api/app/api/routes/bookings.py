@@ -20,7 +20,7 @@ from app.core.deps import get_current_user
 from app.core.email import send_email
 from app.core.notify import notify_admins
 from app.core.upi import decode_image_upload, get_upi_settings, qr_data_url, upi_uri
-from app.models.models import CHANNELS, BookingPhoto, CallSignal, ConsultationRequest, HomeContent, TarotContent, User
+from app.models.models import CHANNELS, BookingPhoto, CallSignal, ConsultationRequest, HomeContent, RitualsContent, TarotContent, User
 from app.schemas.schemas import (
     FeeItemIn,
     CallInfoOut,
@@ -37,8 +37,6 @@ router = APIRouter(prefix="/bookings", tags=["bookings"])
 IST = timezone(timedelta(hours=5, minutes=30))
 TOPICS = {"love": "Love life", "career": "Career", "marriage": "Marriage", "other": "Other"}
 # The call room opens this long before the slot and stays open this long after it ends.
-ROOM_OPENS_EARLY = timedelta(minutes=15)
-ROOM_GRACE_AFTER = timedelta(minutes=60)
 
 
 def booking_out(r: ConsultationRequest) -> ConsultationRequestOut:
@@ -143,10 +141,13 @@ async def create_request(payload: ConsultationRequestIn, user: User = Depends(ge
         if not payload.dob:
             raise HTTPException(status_code=422, detail="Please enter your date of birth")
     photos = decode_photos(payload.photos)
-    r = ConsultationRequest(user_id=str(user.id), **payload.model_dump(exclude={"photos"}))
+    r = ConsultationRequest(user_id=str(user.id), **payload.model_dump(exclude={"photos", "intention"}))
     if r.kind == "ritual":
-        # A ritual has no call: chat is for updates. Session fields don't apply.
-        r.session_id, r.channels = "", ["chat"]
+        # What the client gets follows the intention's setting in the admin
+        # (chat only by default); she can still change it per booking.
+        content = await RitualsContent.find_one()
+        i = next((x for x in (content.intentions if content else []) if x.id == payload.intention), None)
+        r.session_id, r.channels = "", [c for c in CHANNELS if c in (i.channels if i else ["chat"])] or ["chat"]
     elif r.session_id.startswith(RATE_PREFIX):
         # A service from the home page rate list ("rate-<position>").
         home = await HomeContent.find_one()
@@ -273,12 +274,10 @@ def require_room_open(r: ConsultationRequest, role: str, mode: str | None = None
         raise HTTPException(status_code=403, detail="not_included")
     if role == "host" or r.scheduled_at is None:
         return  # Vidushi Ji can open the room any time.
-    now = datetime.utcnow()
-    end = r.scheduled_at + timedelta(minutes=r.duration_minutes or 60)
-    if now < r.scheduled_at - ROOM_OPENS_EARLY:
+    # The client's room opens at the time the admin set and stays open until
+    # she marks the booking completed (the status check above).
+    if datetime.utcnow() < r.scheduled_at:
         raise HTTPException(status_code=425, detail="too_early")
-    if now > end + ROOM_GRACE_AFTER:
-        raise HTTPException(status_code=410, detail="ended")
 
 
 async def insert_signal(request_id: str, role: str, payload: CallSignalIn) -> CallSignalOut:

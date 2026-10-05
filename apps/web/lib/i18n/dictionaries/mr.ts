@@ -233,7 +233,7 @@ const mr: Record<string, string> = {
   "booking.fee": "शुल्क",
   "booking.payNow": "UPI ने पेमेंट करा",
   "booking.roomOpen": "कॉल रूम उघडला आहे.",
-  "booking.roomOpensNote": "कॉलची बटणे तुमच्या वेळेच्या 15 मिनिटे आधी सुरू होतील.",
+  "booking.roomOpensNote": "कॉलची बटणे तुमच्या ठरलेल्या वेळी दिसतील आणि सेशन पूर्ण होईपर्यंत राहतील.",
   "booking.startsIn": "सुरू होण्यास",
   "booking.joinVideo": "व्हिडिओ कॉलमध्ये सामील व्हा",
   "booking.joinAudio": "ऑडिओ कॉलमध्ये सामील व्हा",

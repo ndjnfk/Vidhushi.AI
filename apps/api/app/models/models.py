@@ -594,6 +594,9 @@ class RitualIntentionItem(BaseModel):
     name: str
     price: int | None = None  # rupees; None = no price shown
     price_usd: int | None = None  # optional, shown next to the rupee price
+    # What a client booking this ritual gets once confirmed (default for new
+    # requests; the admin can change it per booking).
+    channels: list[str] = Field(default_factory=lambda: ["chat"])
 
 
 class RitualsContent(Document):
@@ -646,7 +649,8 @@ class TarotContent(Document):
 class Review(Document):
     """A customer's rating of a completed consultation/ritual or a delivered
     shop order. One per booking/order. Shown on the public Reviews page
-    unless the admin hides it."""
+    unless the admin hides it. The admin can also add one by hand (e.g. from
+    a client from before the website): no user, `target_id` "admin-<random>"."""
     user_id: str
     target_kind: str  # "consultation" | "ritual" | "order"
     target_id: str
@@ -655,6 +659,7 @@ class Review(Document):
     name: str  # shown publicly, shortened: "Asha V."
     label: str  # what was reviewed: session name, "Healing ritual", product
     hidden: bool = False
+    added_by_admin: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:

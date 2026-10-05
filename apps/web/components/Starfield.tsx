@@ -3,20 +3,18 @@
 import { useEffect, useRef } from "react";
 import { makeNoise } from "@/lib/noise";
 
+// Hand the main thread back to the browser between slices of work, so the
+// nebula never becomes one long task that blocks clicks and scrolling.
+const yieldToMain = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+const SLICE_MS = 12;
+
 // Deep-space backdrop: smoky nebula haze, a dense field of faint stars and a
 // few bright ones with soft glow and diffraction spikes. Fills its parent.
-function draw(canvas: HTMLCanvasElement, seed: number) {
+// Returns false if `cancelled()` turned true before it finished.
+async function draw(canvas: HTMLCanvasElement, w: number, h: number, seed: number, cancelled: () => boolean): Promise<boolean> {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const { width: w, height: h } = canvas.getBoundingClientRect();
-  if (!w || !h) return;
-  canvas.width = Math.round(w * dpr);
-  canvas.height = Math.round(h * dpr);
-  const ctx = canvas.getContext("2d")!;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (!w || !h) return false;
   const { fbm, rand } = makeNoise(seed);
-
-  ctx.fillStyle = "#070506";
-  ctx.fillRect(0, 0, w, h);
 
   // Smoke/nebula at quarter resolution — it's soft anyway — then scaled up
   // smoothly. It gathers in the top-left and bottom-right corners and fades
@@ -27,7 +25,13 @@ function draw(canvas: HTMLCanvasElement, seed: number) {
   neb.height = nh;
   const nctx = neb.getContext("2d")!;
   const img = nctx.createImageData(nw, nh);
+  let sliceStart = performance.now();
   for (let y = 0; y < nh; y++) {
+    if (performance.now() - sliceStart > SLICE_MS) {
+      await yieldToMain();
+      if (cancelled()) return false;
+      sliceStart = performance.now();
+    }
     for (let x = 0; x < nw; x++) {
       const u = x / 120, v = y / 120;
       // Domain warp bends the smoke; the ridged term (1 - |n|) turns noise
@@ -49,6 +53,15 @@ function draw(canvas: HTMLCanvasElement, seed: number) {
     }
   }
   nctx.putImageData(img, 0, 0);
+
+  // Size the visible canvas only now: resizing clears it, so doing it after
+  // the slow part keeps the previous drawing on screen until this one is ready.
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  const ctx = canvas.getContext("2d")!;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = "#070506";
+  ctx.fillRect(0, 0, w, h);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   // A light blur keeps the wisps soft-edged.
@@ -96,6 +109,7 @@ function draw(canvas: HTMLCanvasElement, seed: number) {
     }
   }
   ctx.globalAlpha = 1;
+  return true;
 }
 
 export default function Starfield({ className = "", seed = 7 }: { className?: string; seed?: number }) {
@@ -106,21 +120,40 @@ export default function Starfield({ className = "", seed = 7 }: { className?: st
     if (!canvas) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let lastW = 0, lastH = 0;
-    const observer = new ResizeObserver(([entry]) => {
+    let run = 0; // bumped to cancel a drawing in progress
+    let visible = false, pending = false;
+
+    const start = () => {
+      pending = false;
+      const id = ++run;
+      draw(canvas, lastW, lastH, seed, () => id !== run).then((done) => {
+        if (done) canvas.style.opacity = "1";
+      });
+    };
+    // Off-screen backdrops wait until they are about to scroll into view.
+    const schedule = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => (visible ? start() : (pending = true)), 120);
+    };
+
+    const resize = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
       if (Math.abs(width - lastW) < 1 && Math.abs(height - lastH) < 1) return;
       lastW = width;
       lastH = height;
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        draw(canvas, seed);
-        canvas.style.opacity = "1";
-      }, 120);
+      schedule();
     });
-    observer.observe(canvas);
+    const seen = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      if (visible && pending) start();
+    }, { rootMargin: "400px 0px" });
+    resize.observe(canvas);
+    seen.observe(canvas);
     return () => {
-      observer.disconnect();
+      resize.disconnect();
+      seen.disconnect();
       clearTimeout(timer);
+      run++;
     };
   }, [seed]);
 

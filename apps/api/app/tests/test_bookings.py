@@ -45,7 +45,7 @@ async def test_full_flow_request_approve_pay_then_call_signals():
     with pytest.raises(HTTPException):
         await bookings.payment_submitted(created.id, PaymentSubmittedIn(), user=client)
 
-    start = datetime.now(timezone.utc) + timedelta(minutes=5)
+    start = datetime.now(timezone.utc) - timedelta(minutes=1)  # the room opens at the set time
     approved = await admin_bookings.approve(
         created.id, ConsultationApproveIn(scheduled_at=start, duration_minutes=30, amount=501, note="See you")
     )

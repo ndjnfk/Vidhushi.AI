@@ -15,6 +15,7 @@ import ZodiacWheel from "@/components/ZodiacWheel";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useHomeContent, useVisibleSections, type HomeSection } from "@/lib/useHomeContent";
 import { useTarotContent } from "@/lib/useTarotContent";
+import { useInitialHero } from "./InitialHero";
 
 // Default photo inside the arch; the admin can upload another ("Home page").
 const DEFAULT_HERO_IMAGE = "/home/hero.jpg";
@@ -36,7 +37,7 @@ function HeroArt({ image }: { image: string }) {
       {/* Arch portrait */}
       <div className="absolute bottom-[17%] left-[20.5%] top-[16%] w-[59%] overflow-hidden rounded-t-full">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={image} alt={t("home.heroName")} className="h-full w-full object-cover object-center" />
+        <img src={image} alt={t("home.heroName")} fetchPriority="high" className="h-full w-full object-cover object-center" />
         {/* Darkens the bottom so the signature stays readable on light photos. */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
       </div>
@@ -52,11 +53,12 @@ function HeroArt({ image }: { image: string }) {
 function Hero() {
   const { t } = useLanguage();
   const home = useHomeContent();
+  const initialHero = useInitialHero();
   const tarot = useTarotContent();
 
   return (
     <section className="grid lg:grid-cols-2">
-      <HeroArt image={home?.hero_image_url || DEFAULT_HERO_IMAGE} />
+      <HeroArt image={(home ? home.hero_image_url : initialHero) || DEFAULT_HERO_IMAGE} />
 
       <div className="flex items-center px-6 py-16 md:px-16 lg:px-[12%]">
         <div className="max-w-2xl">

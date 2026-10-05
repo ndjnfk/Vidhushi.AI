@@ -276,7 +276,7 @@ const hi: Record<string, string> = {
   "booking.fee": "शुल्क",
   "booking.payNow": "UPI से भुगतान करें",
   "booking.roomOpen": "कॉल रूम खुल गया है।",
-  "booking.roomOpensNote": "कॉल के बटन आपके समय से 15 मिनट पहले खुलेंगे।",
+  "booking.roomOpensNote": "कॉल के बटन आपके तय समय पर दिखेंगे और सेशन पूरा होने तक रहेंगे।",
   "booking.startsIn": "शुरू होने में",
   "booking.joinVideo": "वीडियो कॉल से जुड़ें",
   "booking.joinAudio": "ऑडियो कॉल से जुड़ें",

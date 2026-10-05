@@ -7,9 +7,10 @@ from fastapi import HTTPException
 from app.admin.routes import bookings as admin_bookings
 from app.admin.routes import tarot_content as admin_tarot
 from app.api.routes import bookings, chat
-from app.models.models import ConsultationRequest, User
+from app.models.models import ConsultationRequest, RitualIntentionItem, RitualsContent, User
 from app.schemas.schemas import (
     ChatMessageIn,
+    BookingChannelsIn,
     ConsultationApproveIn,
     ConsultationRequestIn,
     FeeItemIn,
@@ -28,7 +29,7 @@ async def _confirmed_booking(session_id: str) -> tuple[User, str]:
         name="Asha", email="asha@example.com", phone="9876543210", place="Delhi", topic="other",
         message="Q", session_id=session_id, photos=[PHOTO], dob="1995-03-12",
     ), user=client)
-    start = datetime.now(timezone.utc) + timedelta(minutes=5)
+    start = datetime.now(timezone.utc) - timedelta(minutes=1)  # the room opens at the set time
     await admin_bookings.approve(b.id, ConsultationApproveIn(scheduled_at=start, duration_minutes=30, amount=999))
     await admin_bookings.payment_received(b.id)
     return client, b.id
@@ -176,7 +177,7 @@ async def test_admin_picks_how_a_ritual_client_can_reach_her(monkeypatch):
     base = dict(name="Isha", email="isha@example.com", phone="9876543210", place="Pune", topic="other")
     ritual = await bookings.create_request(ConsultationRequestIn(**base, kind="ritual", photos=[PHOTO], dob="1995-03-12"), user=client)
     session = await bookings.create_request(ConsultationRequestIn(**base, session_id="call-15", photos=[PHOTO], dob="1995-03-12"), user=client)
-    start = datetime.now(timezone.utc) + timedelta(minutes=5)
+    start = datetime.now(timezone.utc) - timedelta(minutes=1)
 
     approved = await admin_bookings.approve(ritual.id, ConsultationApproveIn(
         scheduled_at=start, duration_minutes=60, amount=2100, channels=["video", "chat"]))
@@ -204,3 +205,51 @@ async def test_rate_list_service_booking():
     assert b.session_name == "Legal Matters"  # the built-in list's 2nd item
     with pytest.raises(HTTPException):
         await bookings.create_request(ConsultationRequestIn(session_id="rate-99", **base), user=client)
+
+
+async def test_call_opens_at_the_set_time_and_stays_open_until_completed():
+    client, bid = await _confirmed_booking("call-15")
+    r = await ConsultationRequest.get(PydanticObjectId(bid))
+    r.scheduled_at = datetime.utcnow() + timedelta(minutes=5)  # not even a few minutes early
+    await r.save()
+    with pytest.raises(HTTPException) as e:
+        await bookings.call_info(bid, mode="video", user=client)
+    assert e.value.status_code == 425
+
+    r.scheduled_at = datetime.utcnow() - timedelta(hours=6)  # long past the 30-minute slot
+    await r.save()
+    assert (await bookings.call_info(bid, mode="video", user=client)).role == "client"
+    assert (await bookings.call_info(bid, mode="audio", user=client)).role == "client"
+
+    await admin_bookings.complete(bid)
+    with pytest.raises(HTTPException):
+        await bookings.call_info(bid, mode="video", user=client)
+
+
+async def test_ritual_calls_follow_the_intention_and_can_change_per_booking():
+    await RitualsContent(intentions=[
+        RitualIntentionItem(id="legal", name="Court Cases", channels=["chat", "video"]),
+        RitualIntentionItem(id="love", name="Love"),
+    ]).insert()
+    client = User(email="c7@example.com", hashed_password="x")
+    await client.insert()
+    base = dict(name="Isha", email="isha@example.com", phone="9876543210", place="Pune", topic="other",
+                kind="ritual", photos=[PHOTO], dob="1995-03-12")
+    legal = await bookings.create_request(ConsultationRequestIn(**base, intention="legal"), user=client)
+    love = await bookings.create_request(ConsultationRequestIn(**base, intention="love"), user=client)
+    other = await bookings.create_request(ConsultationRequestIn(**base), user=client)
+    assert legal.channels == ["chat", "video"]
+    assert love.channels == ["chat"] and other.channels == ["chat"]
+
+    # The admin turns audio on for a confirmed ritual; the client gets it at once.
+    start = datetime.now(timezone.utc) - timedelta(minutes=1)
+    await admin_bookings.approve(love.id, ConsultationApproveIn(scheduled_at=start, duration_minutes=60, amount=2100))
+    await admin_bookings.payment_received(love.id)
+    with pytest.raises(HTTPException):
+        await bookings.call_info(love.id, mode="audio", user=client)
+    assert (await admin_bookings.set_channels(love.id, BookingChannelsIn(channels=["audio", "chat"]))).channels == ["chat", "audio"]
+    assert (await bookings.call_info(love.id, mode="audio", user=client)).role == "client"
+
+    with pytest.raises(HTTPException):  # sessions keep their tarot session's setting
+        session = await bookings.create_request(ConsultationRequestIn(**{**base, "kind": "consultation"}, session_id="call-15"), user=client)
+        await admin_bookings.set_channels(session.id, BookingChannelsIn(channels=["chat"]))

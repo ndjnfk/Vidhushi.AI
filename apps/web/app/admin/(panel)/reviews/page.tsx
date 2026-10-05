@@ -4,20 +4,89 @@ import { useEffect, useState } from "react";
 import Stars from "@/components/reviews/Stars";
 import { parseUtc } from "@/lib/bookings";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { deleteReview, listAdminReviews, setReviewHidden, type AdminReviewOut } from "../../_lib/api";
+import { INPUT, LABEL } from "../../_components/ContentEditor";
+import { addAdminReview, deleteReview, listAdminReviews, setReviewHidden, type AdminReviewIn, type AdminReviewOut } from "../../_lib/api";
 
 const BTN = "inline-flex items-center justify-center gap-2 px-5 py-3 text-[12px] font-extrabold uppercase tracking-[0.14em] transition-colors disabled:opacity-50";
 const FILTERS = ["all", "visible", "hidden"] as const;
 type Filter = (typeof FILTERS)[number];
 
-// Every customer review: Hide takes one off the public pages (reversible),
-// Delete removes it for good.
+const KINDS = ["consultation", "ritual", "order"] as const;
+const today = () => new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD, local
+const blank = (): AdminReviewIn => ({ name: "", rating: 5, text: "", label: "", target_kind: "consultation", given_on: today() });
+
+// Vidushi Ji adds a review herself, e.g. from a client from before the website.
+function AddReviewForm({ onAdded, onCancel }: { onAdded: (r: AdminReviewOut) => void; onCancel: () => void }) {
+  const { t } = useLanguage();
+  const [f, setF] = useState<AdminReviewIn>(blank);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const set = (patch: Partial<AdminReviewIn>) => setF((cur) => ({ ...cur, ...patch }));
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      onAdded(await addAdminReview({ ...f, given_on: f.given_on || undefined }));
+      setF(blank());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="mt-6 grid gap-5 border border-gold/40 bg-ink-soft/60 p-6 sm:grid-cols-2">
+      <p className="text-sm text-cream/70 sm:col-span-2">{t("adminReviews.addHint")}</p>
+      <label className="flex flex-col gap-2">
+        <span className={LABEL}>{t("adminReviews.clientName")}</span>
+        <input className={INPUT} value={f.name} maxLength={60} required placeholder="Priya S." onChange={(e) => set({ name: e.target.value })} />
+      </label>
+      <label className="flex flex-col gap-2">
+        <span className={LABEL}>{t("adminReviews.service")}</span>
+        <input className={INPUT} value={f.label} maxLength={80} required placeholder={t("adminReviews.servicePlaceholder")} onChange={(e) => set({ label: e.target.value })} />
+      </label>
+      <div className="flex flex-col gap-2">
+        <span className={LABEL}>{t("review.rating")}</span>
+        <div className="py-2"><Stars value={f.rating} size="h-7 w-7" onPick={(rating) => set({ rating })} label={t("review.rating")} /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <label className="flex flex-col gap-2">
+          <span className={LABEL}>{t("adminReviews.type")}</span>
+          <select className={`${INPUT} bg-ink`} value={f.target_kind} onChange={(e) => set({ target_kind: e.target.value as AdminReviewIn["target_kind"] })}>
+            {KINDS.map((k) => <option key={k} value={k}>{t(`adminReviews.kind.${k}`)}</option>)}
+          </select>
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className={LABEL}>{t("adminReviews.date")}</span>
+          <input type="date" className={`${INPUT} [color-scheme:dark]`} value={f.given_on ?? ""} max={today()} onChange={(e) => set({ given_on: e.target.value })} />
+        </label>
+      </div>
+      <label className="flex flex-col gap-2 sm:col-span-2">
+        <span className={LABEL}>{t("adminReviews.reviewText")}</span>
+        <textarea className={`${INPUT} min-h-28 resize-y`} value={f.text} minLength={3} maxLength={1000} required onChange={(e) => set({ text: e.target.value })} />
+      </label>
+      <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
+        <button type="submit" disabled={busy} className={`${BTN} bg-white text-ink hover:bg-gold`}>{t("adminReviews.addSubmit")}</button>
+        <button type="button" onClick={onCancel} className={`${BTN} border border-line text-cream/70 hover:border-cream/40`}>{t("common.cancel")}</button>
+        {error && <p className="text-sm text-red-400">{error}</p>}
+      </div>
+    </form>
+  );
+}
+
+// Every review: Hide takes one off the public pages (reversible), Delete
+// removes it for good. Vidushi Ji can also add reviews herself.
 export default function AdminReviewsPage() {
   const { t } = useLanguage();
   const [rows, setRows] = useState<AdminReviewOut[] | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     listAdminReviews().then(setRows).catch((e: Error) => setError(e.message));
@@ -62,6 +131,23 @@ export default function AdminReviewsPage() {
         <h1 className="mt-3 font-display text-[clamp(2.2rem,4vw,3.4rem)] uppercase tracking-[0.04em] text-gold">{t("adminReviews.title")}</h1>
         <p className="mt-3 max-w-2xl text-cream/70">{t("adminReviews.intro")}</p>
 
+        {!adding && (
+          <button type="button" onClick={() => { setAdding(true); setNotice(null); }} className={`${BTN} mt-6 bg-white text-ink hover:bg-gold`}>
+            + {t("adminReviews.add")}
+          </button>
+        )}
+        {adding && (
+          <AddReviewForm
+            onCancel={() => setAdding(false)}
+            onAdded={(r) => {
+              setRows((cur) => [r, ...(cur ?? [])].sort((a, b) => parseUtc(b.created_at).getTime() - parseUtc(a.created_at).getTime()));
+              setAdding(false);
+              setNotice(t("adminReviews.added").replace("{name}", r.name));
+            }}
+          />
+        )}
+        {notice && <p role="status" className="mt-4 text-sm text-gold">{notice}</p>}
+
         <div className="mt-8 flex flex-wrap gap-2" role="tablist">
           {FILTERS.map((f) => (
             <button key={f} type="button" role="tab" aria-selected={filter === f} onClick={() => setFilter(f)}
@@ -88,6 +174,7 @@ export default function AdminReviewsPage() {
                       <span className="font-bold text-cream">{r.name}</span> · {r.label} · {t(`adminReviews.kind.${r.target_kind}`)} ·{" "}
                       {parseUtc(r.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                     </span>
+                    {r.added_by_admin && <span className="border border-gold/40 px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-gold/80">{t("adminReviews.addedBadge")}</span>}
                     {r.hidden && <span className="border border-line px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-cream/60">{t("adminReviews.hiddenBadge")}</span>}
                   </div>
                   <p className="mt-3 whitespace-pre-wrap leading-relaxed text-cream/90">&ldquo;{r.text}&rdquo;</p>

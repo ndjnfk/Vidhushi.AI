@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { useLive } from "@/lib/live";
 import { listReviews } from "@/lib/reviews";
 import { useHomeContent } from "@/lib/useHomeContent";
 
@@ -71,11 +72,13 @@ export default function Testimonials() {
   const [customer, setCustomer] = useState<Slide[] | null>(null); // null = loading
   const admin = useHomeContent()?.testimonials ?? [];
 
-  useEffect(() => {
+  const load = useCallback(() => {
     listReviews(0, LATEST)
       .then((p) => setCustomer(p.items.map((r) => ({ quote: shorten(r.text), name: r.name, detail: r.label, rating: r.rating, photo_url: null }))))
-      .catch(() => setCustomer([]));
+      .catch(() => setCustomer((cur) => cur ?? []));
   }, []);
+  useEffect(load, [load]);
+  useLive("reviews", load); // a new review shows up without a reload
 
   const fromCustomers = !!customer?.length;
   const reviews: Slide[] = fromCustomers
@@ -129,7 +132,7 @@ export default function Testimonials() {
         {/* All slides share one grid cell so the height fits the longest quote. */}
         <div className="grid flex-1">
           {reviews.map((r, i) => {
-            const active = i === index;
+            const active = i === index % count; // the list can shrink when a review is hidden
             return (
               <figure
                 key={i}

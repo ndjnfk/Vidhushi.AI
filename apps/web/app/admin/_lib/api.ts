@@ -24,6 +24,9 @@ export const rejectBooking = (id: string, note: string) =>
   adminFetch<ConsultationRequestOut>(`/admin/bookings/${id}/reject`, { method: "POST", body: JSON.stringify({ note }) });
 export const markPaymentReceived = (id: string) =>
   adminFetch<ConsultationRequestOut>(`/admin/bookings/${id}/payment-received`, { method: "POST" });
+// Rituals: what the client can use, changeable until the booking is completed.
+export const setBookingChannels = (id: string, channels: Channel[]) =>
+  adminFetch<ConsultationRequestOut>(`/admin/bookings/${id}/channels`, { method: "POST", body: JSON.stringify({ channels }) });
 export const completeBooking = (id: string) =>
   adminFetch<ConsultationRequestOut>(`/admin/bookings/${id}/complete`, { method: "POST" });
 
@@ -132,7 +135,18 @@ export const clearAllData = (password: string, confirm: string) =>
 export interface AdminReviewOut extends ReviewOut {
   target_id: string;
   hidden: boolean;
+  added_by_admin: boolean; // added from the admin panel, not by a customer on the site
 }
+export interface AdminReviewIn {
+  name: string;
+  rating: number;
+  text: string;
+  label: string; // what was reviewed
+  target_kind: ReviewOut["target_kind"];
+  given_on?: string; // YYYY-MM-DD; empty = today
+}
+export const addAdminReview = (body: AdminReviewIn) =>
+  adminFetch<AdminReviewOut>("/admin/reviews", { method: "POST", body: JSON.stringify(body) });
 export const listAdminReviews = () => adminFetch<AdminReviewOut[]>("/admin/reviews");
 export const setReviewHidden = (id: string, hidden: boolean) =>
   adminFetch<AdminReviewOut>(`/admin/reviews/${id}`, { method: "PUT", body: JSON.stringify({ hidden }) });

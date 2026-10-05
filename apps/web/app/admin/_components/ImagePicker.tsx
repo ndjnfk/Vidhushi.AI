@@ -2,18 +2,9 @@
 
 import { useRef, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { prepareImage } from "../_lib/image";
 
-const MAX_BYTES = 3 * 1024 * 1024;
 const BTN = "inline-flex items-center justify-center gap-2 px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.14em] transition-colors disabled:opacity-50";
-
-function readAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result));
-    r.onerror = () => reject(r.error);
-    r.readAsDataURL(file);
-  });
-}
 
 // Preview + upload/remove for one image. `upload` stores the file and
 // returns its URL; `onChange(null)` falls back to the site's default image.
@@ -38,11 +29,10 @@ export default function ImagePicker({
     e.target.value = "";
     if (!f) return;
     if (!["image/png", "image/jpeg", "image/webp"].includes(f.type)) return setError(t("adminPay.badType"));
-    if (f.size > MAX_BYTES) return setError(t("adminProducts.tooBig"));
     setBusy(true);
     setError(null);
     try {
-      onChange(await upload(await readAsDataUrl(f)));
+      onChange(await upload(await prepareImage(f)));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

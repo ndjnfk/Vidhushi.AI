@@ -1,17 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Stars from "@/components/reviews/Stars";
 import Sparkle from "@/components/Sparkle";
 import Starfield from "@/components/Starfield";
 import { parseUtc } from "@/lib/bookings";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { useLive } from "@/lib/live";
 import { listReviews, REVIEWS_PAGE, type ReviewOut, type ReviewPageOut } from "@/lib/reviews";
 
 // Reviews from customers who finished a consultation, ritual or shop order:
 // newest first, 10 at a time with "Show more". `initial` is the first page the
-// server rendered with (null if the API was unreachable then).
+// server rendered with (null if the API was unreachable then). The server copy
+// can be up to a minute old, so the browser refetches on open and whenever a
+// review is added, hidden or deleted.
 export default function ReviewsView({ initial }: { initial: ReviewPageOut | null }) {
   const { t } = useLanguage();
   const [items, setItems] = useState<ReviewOut[] | null>(initial?.items ?? null);
@@ -20,16 +23,20 @@ export default function ReviewsView({ initial }: { initial: ReviewPageOut | null
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const apply = useCallback((p: ReviewPageOut) => {
+    setItems(p.items);
+    setTotal(p.total);
+    setAverage(p.average);
+    setError(null);
+  }, []);
+
   useEffect(() => {
-    if (initial) return;
-    listReviews(0)
-      .then((p) => {
-        setItems(p.items);
-        setTotal(p.total);
-        setAverage(p.average);
-      })
-      .catch((e) => setError(e.message));
-  }, [initial]);
+    listReviews(0).then(apply).catch((e) => setError(e.message));
+  }, [apply]);
+  // Reloads everything on screen, keeping any pages "Show more" added.
+  useLive("reviews", () => {
+    listReviews(0, Math.min(50, Math.max(REVIEWS_PAGE, items?.length ?? 0))).then(apply).catch((e) => setError(e.message));
+  });
 
   async function more() {
     if (!items) return;

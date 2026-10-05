@@ -9,8 +9,9 @@ import { getToken } from "@/lib/auth";
 //   site     — contact details / social links (Site settings)
 //   home     — home & about page content (Home page editor)
 //   products — the shop catalogue
+//   reviews  — customer reviews (new, hidden or deleted)
 //   me       — the signed-in user's bookings and orders
-export type LiveTopic = "site" | "home" | "products" | "me";
+export type LiveTopic = "site" | "home" | "products" | "reviews" | "me";
 
 const listeners = new Map<LiveTopic, Set<() => void>>();
 let revs: Record<string, number> | null = null;

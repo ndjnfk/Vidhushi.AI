@@ -635,6 +635,7 @@ class ConsultationRequestIn(BaseModel):
     message: str = Field(default="", max_length=2000)
     session_id: str = Field(default="", pattern=r"^[a-z0-9-]{0,40}$")  # tarot session, if any
     kind: str = Field(default="consultation", pattern="^(consultation|ritual)$")
+    intention: str = Field(default="", pattern=r"^[a-z0-9-]{0,40}$")  # ritual intention id, if any
     # The client's face photo as a data: URL (PNG/JPEG/WebP). Exactly one is
     # required for tarot sessions and ritual requests (checked on create).
     photos: list[str] = Field(default_factory=list, max_length=1)
@@ -709,6 +710,18 @@ class ConsultationApproveIn(BaseModel):
         if not self.fee_items and self.amount is None:
             raise ValueError("Enter the fee")
         return self
+
+
+class BookingChannelsIn(BaseModel):
+    """Ritual requests: what the client can use (chat / audio / video)."""
+    channels: list[str] = Field(min_length=1, max_length=3)
+
+    @field_validator("channels")
+    @classmethod
+    def _known_channels(cls, v: list[str]) -> list[str]:
+        if not set(v) <= {"chat", "audio", "video"}:
+            raise ValueError("channels must be chat, audio or video")
+        return [c for c in ("chat", "audio", "video") if c in v]
 
 
 class ConsultationDecisionIn(BaseModel):
@@ -1006,6 +1019,32 @@ class MyReviewOut(ReviewOut):
 class AdminReviewOut(ReviewOut):
     target_id: str
     hidden: bool
+    added_by_admin: bool = False
+
+
+class AdminReviewIn(BaseModel):
+    """A review the admin adds herself, e.g. from a client from before the website."""
+    name: str = Field(min_length=1, max_length=60)  # shown as typed
+    rating: int = Field(ge=1, le=5)
+    text: str = Field(min_length=3, max_length=1000)
+    label: str = Field(min_length=1, max_length=80)  # what was reviewed, e.g. "Career Tarot Reading"
+    target_kind: str = Field(default="consultation", pattern="^(consultation|ritual|order)$")
+    given_on: date | None = None  # when it was given; None = today
+
+    @field_validator("name", "text", "label")
+    @classmethod
+    def _strip(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("must not be blank")
+        return v
+
+    @field_validator("given_on")
+    @classmethod
+    def _not_future(cls, v: date | None) -> date | None:
+        if v is not None and v > datetime.utcnow().date():
+            raise ValueError("The date can't be in the future")
+        return v
 
 
 class ReviewHiddenIn(BaseModel):
@@ -1019,6 +1058,14 @@ class RitualIntentionIn(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     price: int | None = Field(default=None, ge=0, le=10_000_000)
     price_usd: int | None = Field(default=None, ge=0, le=10_000_000)
+    channels: list[str] = Field(default_factory=lambda: ["chat"], min_length=1, max_length=3)
+
+    @field_validator("channels")
+    @classmethod
+    def _known_channels(cls, v: list[str]) -> list[str]:
+        if not set(v) <= {"chat", "audio", "video"}:
+            raise ValueError("channels must be chat, audio or video")
+        return [c for c in ("chat", "audio", "video") if c in v]
 
 
 class RitualsContentIn(BaseModel):

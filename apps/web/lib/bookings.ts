@@ -24,6 +24,7 @@ export interface ConsultationRequestIn {
   message: string;
   session_id?: string; // tarot session, if any
   kind?: BookingKind;
+  intention?: string; // ritual intention id (its call options are the default)
   photos?: string[]; // the client's face photo (data: URL); one, for sessions and rituals
   dob?: string; // YYYY-MM-DD; required for sessions and rituals
 }

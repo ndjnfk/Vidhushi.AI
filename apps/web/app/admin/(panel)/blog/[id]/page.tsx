@@ -8,32 +8,21 @@ import Sparkle from "@/components/Sparkle";
 import { SITE_URL } from "@/lib/seo";
 import { createPost, getAdminPost, updatePost, uploadBlogImage, type AdminBlogPost, type BlogPostIn } from "../../../_lib/api";
 import { searchDescription, searchTitle, seoChecks, slugify, wordCount } from "../../../_lib/blogSeo";
+import { prepareImage } from "../../../_lib/image";
 
 const INPUT = "w-full border border-line bg-transparent px-4 py-3 text-cream outline-none placeholder:text-cream/40 focus:border-gold";
 const LABEL = "text-[12px] font-extrabold uppercase tracking-[0.14em] text-cream/70";
 const BTN = "inline-flex items-center justify-center gap-2 px-5 py-3 text-[12px] font-extrabold uppercase tracking-[0.14em] transition-colors disabled:opacity-50";
 const TOOL = "border border-line px-3 py-1.5 text-xs font-bold text-cream/80 hover:border-gold hover:text-gold disabled:opacity-50";
-const MAX_BYTES = 3 * 1024 * 1024;
 
 const EMPTY: BlogPostIn = {
   title: "", slug: "", excerpt: "", body: "", tags: [], author_name: "Vidushi Ji", published: false,
   seo_title: "", meta_description: "", cover_image_url: null, cover_image_alt: "",
 };
 
-function readAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result));
-    r.onerror = () => reject(r.error);
-    r.readAsDataURL(file);
-  });
-}
-
 async function pickAndUpload(file: File | undefined): Promise<string | null> {
   if (!file) return null;
-  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) throw new Error("Upload a PNG, JPEG or WebP image");
-  if (file.size > MAX_BYTES) throw new Error("Image is larger than 3 MB");
-  return (await uploadBlogImage(await readAsDataUrl(file))).url;
+  return (await uploadBlogImage(await prepareImage(file))).url;
 }
 
 function Counter({ n, min, max }: { n: number; min: number; max: number }) {

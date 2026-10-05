@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pymongo.errors import DuplicateKeyError
 
 from app.core.deps import get_current_user
+from app.core.live import REVIEWS, bump
 from app.core.notify import notify_admins
 from app.models.models import ConsultationRequest, Review, ShopOrder, User
 from app.schemas.schemas import MyReviewOut, ReviewIn, ReviewOut, ReviewPageOut
@@ -81,6 +82,7 @@ async def create_review(payload: ReviewIn, user: User = Depends(get_current_user
         await r.insert()
     except DuplicateKeyError:
         raise HTTPException(status_code=409, detail="You've already reviewed this")
+    await bump(REVIEWS)  # open Reviews pages and home sliders show it straight away
     await notify_admins(
         f"New {r.rating}-star review from {r.name}",
         f"{r.name} rated \"{r.label}\" {r.rating}/5:\n\n\"{r.text}\"\n\n"

@@ -9,7 +9,8 @@ import { formatDob, formatSlot, parseUtc, type BookingKind, type BookingStatus, 
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { formatPrice } from "@/lib/shop";
 import { useTarotContent } from "@/lib/useTarotContent";
-import { approveBooking, completeBooking, listBookings, markPaymentReceived, rejectBooking } from "../../_lib/api";
+import { approveBooking, completeBooking, listBookings, markPaymentReceived, rejectBooking, setBookingChannels } from "../../_lib/api";
+import ChannelToggles from "../../_components/ChannelToggles";
 import StatusTabs, { MovedNotice } from "../../_components/StatusTabs";
 
 // In the order a booking moves through them.
@@ -134,22 +135,7 @@ function ApproveForm({ row, onDone }: { row: ConsultationRequestOut; onDone: Mov
       {row.kind === "ritual" && (
         <fieldset className="flex flex-col gap-2 sm:col-span-2 lg:col-span-4">
           <legend className={`${LABEL} mb-1.5`}>{t("adminTarot.channels")}</legend>
-          <div className="flex flex-wrap gap-2">
-            {(["chat", "audio", "video"] as const).map((ch) => {
-              const on = channels.includes(ch);
-              const only = on && channels.length === 1;
-              return (
-                <button key={ch} type="button" aria-pressed={on} disabled={only} title={only ? t("adminTarot.channelsMin") : undefined}
-                  onClick={() => setChannels((cur) => (["chat", "audio", "video"] as const).filter((c) => (c === ch ? !on : cur.includes(c))))}
-                  className={`flex items-center gap-2 border px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed ${
-                    on ? "border-gold bg-gold/15 text-gold" : "border-line text-cream/60 hover:border-cream/40"
-                  }`}>
-                  <span aria-hidden="true">{on ? "✓" : "+"}</span>
-                  {t(`adminTarot.channel.${ch}`)}
-                </button>
-              );
-            })}
-          </div>
+          <ChannelToggles value={channels} onChange={setChannels} />
           <p className="text-xs text-cream/50">{t("admin.ritualChannelsHint")}</p>
         </fieldset>
       )}
@@ -171,7 +157,36 @@ function ApproveForm({ row, onDone }: { row: ConsultationRequestOut; onDone: Mov
   );
 }
 
-function Row({ row, onChange, focused }: { row: ConsultationRequestOut; onChange: Moved; focused: boolean }) {
+// Rituals after approval: Vidushi Ji can still turn chat / audio / video on or
+// off until she marks the ritual completed. Saved on each click.
+function RitualChannels({ row, onSaved }: { row: ConsultationRequestOut; onSaved: () => void }) {
+  const { t } = useLanguage();
+  const [pending, setPending] = useState<Channel[] | null>(null); // shown while saving
+  const [error, setError] = useState<string | null>(null);
+
+  async function change(next: Channel[]) {
+    setPending(next);
+    setError(null);
+    try {
+      await setBookingChannels(row.id, next);
+      onSaved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setPending(null);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <ChannelToggles value={pending ?? row.channels} onChange={change} disabled={pending !== null} />
+      <p className="text-xs text-cream/50">{t("admin.ritualChannelsLiveHint")}</p>
+      {error && <p className="text-sm text-red-400">{error}</p>}
+    </div>
+  );
+}
+
+function Row({ row, onChange, onSaved, focused }: { row: ConsultationRequestOut; onChange: Moved; onSaved: () => void; focused: boolean }) {
   const { t } = useLanguage();
   const ref = useRef<HTMLLIElement>(null);
   useEffect(() => {
@@ -203,8 +218,12 @@ function Row({ row, onChange, focused }: { row: ConsultationRequestOut; onChange
         )}
         {row.kind === "ritual" && row.status !== "pending" && (
           <div className="sm:col-span-3">
-            <dt className="text-cream/55">{t("booking.includes")}</dt>
-            <dd className="text-cream">{row.channels.map((c) => t(`adminTarot.channel.${c}`)).join(", ")}</dd>
+            <dt className="mb-1.5 text-cream/55">{t("booking.includes")}</dt>
+            <dd className="text-cream">
+              {row.status === "payment_submitted" || row.status === "confirmed"
+                ? <RitualChannels row={row} onSaved={onSaved} />
+                : row.channels.map((c) => t(`adminTarot.channel.${c}`)).join(", ")}
+            </dd>
           </div>
         )}
         {row.session_id && (
@@ -365,7 +384,7 @@ export function AdminBookings({ kind }: { kind: BookingKind }) {
           <p className="mt-10 text-cream/70">{t("admin.empty")}</p>
         ) : (
           <ul className="mt-8 flex flex-col gap-5">
-            {sorted.map((r) => <Row key={r.id} row={r} onChange={moved} focused={r.id === focusId} />)}
+            {sorted.map((r) => <Row key={r.id} row={r} onChange={moved} onSaved={load} focused={r.id === focusId} />)}
           </ul>
         )}
       </div>

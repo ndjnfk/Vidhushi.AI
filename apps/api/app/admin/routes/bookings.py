@@ -25,6 +25,7 @@ from app.core.live import bump, user_topic
 from app.models.models import ConsultationRequest, FeeItem
 from app.schemas.schemas import (
     AdminCountsOut,
+    BookingChannelsIn,
     CallInfoOut,
     CallSignalIn,
     CallSignalOut,
@@ -148,6 +149,21 @@ async def payment_received(request_id: str):
            f"Date & time: {fmt_ist(r.scheduled_at)}\nDuration: {r.duration_minutes} minutes\n\n"
            f"Join the call from this page at the scheduled time:\n{s.frontend_url}/bookings/{r.id}\n\n— Vidushi Ji"),
     )
+    return booking_out(r)
+
+
+@router.post("/{request_id}/channels", response_model=ConsultationRequestOut)
+async def set_channels(request_id: str, payload: BookingChannelsIn):
+    """Rituals: change what the client can use (e.g. turn the video call on or
+    off) at any point before the booking is completed."""
+    r = await get_booking_or_404(request_id)
+    if r.kind != "ritual":
+        raise HTTPException(status_code=400, detail="A session follows its tarot session's setting")
+    if r.status not in ("pending", "approved", "payment_submitted", "confirmed"):
+        raise HTTPException(status_code=400, detail=f"A {r.status} booking can't be changed")
+    r.channels = payload.channels
+    await r.save()
+    await bump(user_topic(r.user_id))
     return booking_out(r)
 
 

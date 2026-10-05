@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Sparkle from "@/components/Sparkle";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { defaultRitualsContent, type RitualIntentionItem, type RitualsContent } from "@/lib/useRitualsContent";
+import ChannelToggles from "../../_components/ChannelToggles";
 import ImagePicker from "../../_components/ImagePicker";
 import { BTN, INPUT, ListEditor, Section, Text } from "../../_components/ContentEditor";
 import { getRitualsPage, saveRitualsPage, uploadHomeImage } from "../../_lib/api";
@@ -73,7 +74,7 @@ export default function AdminRitualsPageEditor() {
           <ListEditor<RitualIntentionItem>
             label={t("adminRituals.intentions")} items={c.intentions} defaults={d.intentions} max={30}
             addLabel={t("adminRituals.addIntention")} onChange={(intentions) => set({ intentions })}
-            blank={() => ({ id: newId(), name: "", price: null, price_usd: null })}
+            blank={() => ({ id: newId(), name: "", price: null, price_usd: null, channels: ["chat"] })}
             render={(i, update) => (
               <div className="grid gap-3 sm:grid-cols-[1fr_130px_130px]">
                 <input className={INPUT} value={i.name} maxLength={80} required placeholder={t("adminTarot.name")} aria-label={t("adminTarot.name")}
@@ -82,6 +83,10 @@ export default function AdminRitualsPageEditor() {
                   onChange={(e) => update({ ...i, price: e.target.value === "" ? null : Number(e.target.value) })} />
                 <input type="number" min={0} max={10000000} className={INPUT} value={i.price_usd ?? ""} placeholder={t("adminHome.ratePriceUsd")} aria-label={t("adminHome.ratePriceUsd")}
                   onChange={(e) => update({ ...i, price_usd: e.target.value === "" ? null : Number(e.target.value) })} />
+                <div className="flex flex-col gap-1.5 sm:col-span-3">
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-cream/65">{t("adminRituals.channels")}</span>
+                  <ChannelToggles value={i.channels ?? ["chat"]} onChange={(channels) => update({ ...i, channels })} />
+                </div>
               </div>
             )}
           />

@@ -137,7 +137,7 @@ function BookingModal({ preset, onClose }: { preset: BookingPreset; onClose: () 
         name, email, phone, place, topic, message: composeMessage(),
         ...(preset.kind === "tarot" && form.session ? { session_id: form.session } : {}),
         ...(preset.kind !== "general" ? { dob: form.dob } : {}),
-        ...(preset.kind === "ritual" ? { kind: "ritual" as const } : {}),
+        ...(preset.kind === "ritual" ? { kind: "ritual" as const, intention: form.intention } : {}),
         ...(photo ? { photos: [photo] } : {}),
       }));
     } catch (err) {

@@ -18,7 +18,6 @@ import { formatPrice } from "@/lib/shop";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useLive } from "@/lib/live";
 
-const OPENS_EARLY_MS = 15 * 60 * 1000;
 const PRIMARY =
   "inline-flex items-center justify-center gap-3 bg-white px-8 py-5 text-[13px] font-extrabold uppercase tracking-[0.16em] text-ink transition-colors hover:bg-gold disabled:opacity-60";
 const SECONDARY =
@@ -72,7 +71,8 @@ export default function BookingPage() {
   }
 
   const start = b?.scheduled_at ? parseUtc(b.scheduled_at) : null;
-  const canJoin = !!start && now >= start.getTime() - OPENS_EARLY_MS;
+  // Call buttons show from the time Vidushi Ji set until she marks the booking completed.
+  const canJoin = !!start && now >= start.getTime();
   // Only what the booked session includes (set per session in the admin panel).
   const calls = (["video", "audio"] as const).filter((m) => b?.channels.includes(m));
 
@@ -178,18 +178,12 @@ export default function BookingPage() {
                   </p>
                 )}
                 <div className="mt-5 grid gap-4 sm:grid-cols-3">
-                  {calls.map((m) =>
-                    canJoin ? (
-                      <Link key={m} href={`/bookings/${b.id}/call?mode=${m}`} className={m === "video" ? PRIMARY : SECONDARY}>
-                        <Sparkle className={`h-3.5 w-3.5 ${m === "video" ? "text-gold-deep" : "text-gold"}`} />
-                        {t(m === "video" ? "booking.joinVideo" : "booking.joinAudio")}
-                      </Link>
-                    ) : (
-                      <span key={m} aria-disabled="true" className={`${SECONDARY} cursor-not-allowed opacity-45`}>
-                        {t(m === "video" ? "booking.joinVideo" : "booking.joinAudio")}
-                      </span>
-                    ),
-                  )}
+                  {canJoin && calls.map((m) => (
+                    <Link key={m} href={`/bookings/${b.id}/call?mode=${m}`} className={m === "video" ? PRIMARY : SECONDARY}>
+                      <Sparkle className={`h-3.5 w-3.5 ${m === "video" ? "text-gold-deep" : "text-gold"}`} />
+                      {t(m === "video" ? "booking.joinVideo" : "booking.joinAudio")}
+                    </Link>
+                  ))}
                   {b.channels.includes("chat") && (
                     <Link href={`/bookings/${b.id}/chat`} className={SECONDARY}>
                       <Sparkle className="h-3.5 w-3.5 text-gold" />
